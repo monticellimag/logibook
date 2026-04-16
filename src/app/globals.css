@@ -1,0 +1,111 @@
+@import "tailwindcss";
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+  
+  /* Logistica Uno Corporate Palette */
+  --logistica-blue-deep: #224888;
+  --logistica-blue-action: #00A3E0;
+  --logistica-glass: rgba(255, 255, 255, 0.7);
+  --logistica-glass-dark: rgba(15, 23, 42, 0.7);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-inter: var(--font-inter);
+  --font-outfit: var(--font-outfit);
+  
+  /* Custom Logistica Colors */
+  --color-logistica-deep: var(--logistica-blue-deep);
+  --color-logistica-action: var(--logistica-blue-action);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #020617;
+    --foreground: #f8fafc;
+    --logistica-glass: rgba(15, 23, 42, 0.8);
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-outfit), var(--font-inter), ui-sans-serif, system-ui;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism Utilities */
+.glass-panel {
+  background: var(--logistica-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  /* Using standard CSS instead of @apply for custom classes to avoid build errors */
+  background: var(--logistica-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 1.5rem; /* 3xl */
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); /* shadow-xl */
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 300ms;
+}
+
+.dark .glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card:hover {
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25); /* shadow-2xl */
+  transform: scale(1.02);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Gradients */
+.logistica-gradient {
+  background: linear-gradient(135deg, var(--logistica-blue-deep) 0%, #1a3668 100%);
+}
+
+.action-gradient {
+  background: linear-gradient(135deg, var(--logistica-blue-action) 0%, #0087ba 100%);
+}
+
+/* Animations */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+  100% { transform: translateY(0px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.8s ease-out forwards;
+}

@@ -1,0 +1,126 @@
+[
+  {
+    "id": "7a12470a-261d-4165-a3e2-de552e29c078",
+    "email": "admin@slotify.local",
+    "password": "admin",
+    "name": "Super Admin",
+    "role": "admin",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "d3d5e4d8-1bef-468c-acd6-3f8499a1978a",
+    "email": "monticelli@logisticauno.it",
+    "password": "password",
+    "name": "Admin Monticelli d'Ongina",
+    "role": "admin",
+    "depotId": "monticelli",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "5e344185-2372-4eb3-8ce1-f09cfd55b293",
+    "email": "sangiorgiobi@logisticauno.it",
+    "password": "password",
+    "name": "Admin San Giorgio Bigarello",
+    "role": "admin",
+    "depotId": "sangiorgiobi",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "058ac995-b3f3-4607-a247-0bc5f15b7c5f",
+    "email": "oppeano1@logisticauno.it",
+    "password": "password",
+    "name": "Admin OPPEANO 1",
+    "role": "admin",
+    "depotId": "oppeano1",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "6b7b0d16-b041-4356-ba30-1c3eb1240845",
+    "email": "oppeano2@logisticauno.it",
+    "password": "password",
+    "name": "Admin Oppeano 2",
+    "role": "admin",
+    "depotId": "oppeano2",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "90447072-2b68-4b08-b743-601e573aee43",
+    "email": "prato@logisticauno.it",
+    "password": "password",
+    "name": "Admin Prato",
+    "role": "admin",
+    "depotId": "prato",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "3b4e4e59-4db0-48fe-b455-a6aa23130dd7",
+    "email": "porcari@logisticauno.it",
+    "password": "password",
+    "name": "Admin Porcari",
+    "role": "admin",
+    "depotId": "porcari",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "3bac4fc0-0197-4a1f-b09c-d9372b88ff02",
+    "email": "caivano@logisticauno.it",
+    "password": "password",
+    "name": "Admin Caivano",
+    "role": "admin",
+    "depotId": "caivano",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "18724af9-de84-4d66-b2c3-fa6abba96e90",
+    "email": "nola@logisticauno.it",
+    "password": "password",
+    "name": "Admin Nola",
+    "role": "admin",
+    "depotId": "nola",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "228dd40d-59e3-4d7e-aad5-f2250375a18b",
+    "email": "maddaloni@logisticauno.it",
+    "password": "password",
+    "name": "Admin Maddaloni",
+    "role": "admin",
+    "depotId": "maddaloni",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "acefc5af-5011-47fb-86cd-0b4876afbfa5",
+    "email": "bari@logisticauno.it",
+    "password": "password",
+    "name": "Admin Bari",
+    "role": "admin",
+    "depotId": "bari",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "27cc4bc5-95de-43bd-9868-7a0d025d3ad8",
+    "email": "molfetta@logisticauno.it",
+    "password": "password",
+    "name": "Admin Molfetta",
+    "role": "admin",
+    "depotId": "molfetta",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "16e318d8-0606-4d56-86b4-db43b202b969",
+    "email": "palermo@logisticauno.it",
+    "password": "password",
+    "name": "Admin Palermo",
+    "role": "admin",
+    "depotId": "palermo",
+    "createdAt": "2026-04-10T10:18:07.791Z"
+  },
+  {
+    "id": "29a2d61e-c506-46dc-8030-44398399906f",
+    "name": "LCT",
+    "email": "LCT@LCT.IT",
+    "password": "password",
+    "role": "vettore",
+    "createdAt": "2026-04-10T10:51:53.583Z"
+  }
+]
