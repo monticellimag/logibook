@@ -1,23 +1,41 @@
-# LOGIBOOK - Project Status & Roadmap
+# LOGIBOOK - Project Presentation & Roadmap
 > **Ecosistema di Gestione e Prenotazione Slot Logistica Uno**
 
-Questo documento illustra l'architettura tecnica di **LogiBook**, riassume lo stato delle funzionalità implementate e definisce la pianificazione strategica (Roadmap) tramite il framework **MoSCoW**.
+Di seguito è disponibile la presentazione interattiva dello stato del progetto e delle tappe future della Roadmap, organizzata in slide sfogliabili.
 
 ---
 
-## 🏗️ Architettura & Flusso di Sistema
+````carousel
+# 📦 Slide 1: LogiBook Overview
+### *L'efficienza del magazzino comincia dal cancello d'ingresso*
 
-Il diagramma seguente mostra le interazioni dei diversi attori (Vettori, Amministratori e Portineria) con la piattaforma e l'infrastruttura dati.
+**LogiBook** (in precedenza Slotify) è la nuova piattaforma enterprise di Logistica Uno progettata per ottimizzare la pianificazione e il transito dei mezzi nei depositi.
+
+*   **Obiettivo principale**: Ridurre al minimo i tempi di attesa dei vettori ed eliminare le code ai cancelli tramite la digitalizzazione.
+*   **Target di Utilizzo**: 
+    1. **Vettori**: Prenotano gli slot in autonomia caricando la documentazione di viaggio (DDT).
+    2. **Portineria (Gate)**: Monitora live gli arrivi, registra ingressi/uscite e assegna le baie.
+    3. **Amministratori**: Gestiscono le utenze, verificano i KPI prestazionali e controllano i log di audit.
+
+> [!NOTE]
+> Il sistema adotta un'interfaccia premium ad alto contrasto con supporto Dark/Light Mode, riducendo l'affaticamento visivo degli operatori portuali.
+
+<!-- slide -->
+
+# 🏗️ Slide 2: Architettura Cloud-Native
+### *Infrastruttura dati scalabile, resiliente e protetta*
+
+Il diagramma illustra l'architettura tecnica e le connessioni tra le interfacce utente e i database:
 
 ```mermaid
 graph TD
-    classDef actor fill:#f9f,stroke:#333,stroke-width:2px;
-    classDef database fill:#9f9,stroke:#333,stroke-width:2px;
-    classDef core fill:#bbf,stroke:#333,stroke-width:2px;
+    classDef actor fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef database fill:#dcfce7,stroke:#15803d,stroke-width:2px;
+    classDef core fill:#faf5ff,stroke:#7e22ce,stroke-width:2px;
 
-    V[Vettore / Carrier] -->|1. Richiesta Accesso & Prenotazione Slot| NextApp[Next.js App Router]
-    G[Portineria / Gate] -->|2. Check-in Mezzo & Assegnazione Baia| NextApp
-    A[Amministratori / Admin] -->|3. Gestione Hub, Statistiche & Audit| NextApp
+    V[Vettore / Carrier] -->|1. Booking Slot & DDT| NextApp[Next.js App Router]
+    G[Portineria / Gate] -->|2. Check-in & Assegna Baia| NextApp
+    A[Amministratori / Admin] -->|3. Gestione Hub, KPI & Audit| NextApp
 
     NextApp -->|Drizzle ORM| Postgres[(PostgreSQL Supabase Cloud)]
     NextApp -.->|Offline Fallback| SQLite[(SQLite Database Locale)]
@@ -27,8 +45,15 @@ graph TD
     class NextApp core;
 ```
 
-### 🔄 Flusso Operativo del Transito Mezzi
-Ecco la sequenza temporale delle azioni dal momento dell'onboarding del vettore fino al completamento delle operazioni di carico/scarico:
+*   **Database Cloud PostgreSQL**: Ospitato su Supabase per garantire ridondanza, elevata frequenza di transazioni simultanee e backup automatici.
+*   **Tracciabilità Integrata**: Ogni modifica è soggetta ad audit log asincroni non bloccanti.
+
+<!-- slide -->
+
+# 🔄 Slide 3: Ciclo di Vita del Transito
+### *Flusso operativo end-to-end del mezzo di trasporto*
+
+Il diagramma descrive il processo dal momento dell'onboarding del vettore fino all'uscita dal magazzino:
 
 ```mermaid
 sequenceDiagram
@@ -37,79 +62,82 @@ sequenceDiagram
     actor Portineria as Portineria (Gate)
     actor Admin as Admin (Manager)
     
-    Note over Vettore, Admin: Fase 1: Onboarding & Abilitazione
+    Note over Vettore, Admin: Fase 1: Abilitazione Account
     Vettore->>Admin: Richiesta di Registrazione Azienda & P.IVA
-    Admin->>Vettore: Valutazione & Abilitazione Account (Stato ACTIVE)
+    Admin->>Vettore: Approvazione (Stato ACTIVE) & Invio Credenziali
     
-    Note over Vettore, Portineria: Fase 2: Prenotazione Slot
-    Vettore->>Portineria: Booking Orario (DDT Allegato, Targa, Bancali)
+    Note over Vettore, Portineria: Fase 2: Prenotazione Appuntamento
+    Vettore->>Portineria: Prenota Slot Orario (Carica DDT & Riferimento Ordine)
     Vettore->>Vettore: Download Digital Pass con QR Code
     
-    Note over Portineria, Vettore: Fase 3: Arrivo al Gate
+    Note over Portineria, Vettore: Fase 3: Operazioni al Gate
     Vettore->>Portineria: Presentazione QR Code all'arrivo
-    Portineria->>Portineria: Verifica Dispositivi di Sicurezza (DPI)
-    Portineria->>Portineria: Assegnazione Baia & Registrazione Ingresso
-    Note right of Portineria: Avvio Timer KPI (Yard Time in Portineria)
+    Portineria->>Portineria: Check DPI & Assegnazione Baia (Ingresso Registrato)
+    Note right of Portineria: Avvio Timer KPI (Yard Time in Deposito)
     
-    Note over Portineria, Admin: Fase 4: Chiusura Operazione
-    Portineria->>Portineria: Registrazione Uscita Mezzo a fine lavori
-    Note right of Portineria: Stop Timer KPI & Calcolo Durata Effettiva
-    Portineria->>Admin: Archiviazione Dati Transito & Log di Audit
+    Note over Portineria, Admin: Fase 4: Partenza Mezzo
+    Portineria->>Portineria: Registrazione Uscita a fine scarico/carico
+    Note right of Portineria: Stop Timer KPI & Archiviazione Dati Transito
 ```
 
----
+<!-- slide -->
 
-## 📊 Stato Attuale del Progetto (Implementato)
+# ✅ Slide 4: Stato Avanzamento (Features Pronte)
+### *Cosa è stato già completato e integrato nella V1*
 
-La tabella seguente riassume le macro-aree funzionali già completate e pronte per i test.
+| Area Funzionale | Stato | Dettagli Sviluppo |
+| :--- | :---: | :--- |
+| **Sicurezza & Onboarding** | 🟢 Completato | Gestione richieste d'accesso vettori (`PENDING`/`ACTIVE`), login a tre ruoli e cambio password obbligatorio al primo accesso. |
+| **Area Vettori (Booking)** | 🟢 Completato | Calendario slot, vincolo ore 15:00 del giorno precedente, modulo emergenza SOS e gestione avanzata combinata "ENTRAMBI" con tab dedicati. |
+| **Digital Pass QR** | 🟢 Completato | Download pass digitale con QR Code generato dinamicamente per velocizzare il check-in. |
+| **Admin Dashboard** | 🟢 Completato | Multi-deposito rapido, heatmap saturazione mensile con "jump-to-day", statistiche volumi bancali in tempo reale ed export report in formato CSV. |
+| **Gate Live Monitor** | 🟢 Completato | Lista ingressi del giorno, timer di permanenza del mezzo al gate e stampa fogli di marcia A4. |
+| **Registro Audit** | 🟢 Completato | Logging asincrono e immutabile delle modifiche ai dati con visualizzazione old/new values. |
 
-| Componente | Stato | Funzionalità Principali | Dettaglio Tecnico |
-| :--- | :---: | :--- | :--- |
-| **Autenticazione & Accessi** | ✅ Pronto | Accesso profilato per Vettori, Portineria e Admin. Obbligo cambio password al primo accesso. | Sessioni server-side, hash `bcryptjs`, rotte protette middleware. |
-| **Onboarding Vettori** | ✅ Pronto | Modulo di richiesta d'accesso. Dashboard Admin per l'approvazione con note di rifiuto. | Tabella `users` con stati `PENDING` / `ACTIVE` / `REJECTED`. |
-| **Area Vettori (Booking)** | ✅ Pronto | Calendario slot orari, prenotazione con targa/autista, gestione combinata "ENTRAMBI" con tab dedicati. | Validazione schema Zod, logica di blocco prenotazioni dopo le 15:00 del giorno precedente. |
-| **Digital Pass QR** | ✅ Pronto | Generazione dinamica di QR Code contenente l'ID univoco della prenotazione. | Integrazione API esterna QR Code, layout ottimizzato per smartphone. |
-| **Area Admin (Management)**| ✅ Pronto | Modifica/cancellazione prenotazioni, CRUD utenti, esportazione CSV, cruscotto KPI (volume bancali IN/OUT). | Esportatore di flussi nativo, query Drizzle per indicatori temporali e aggregazioni. |
-| **Live Gate Monitor** | ✅ Pronto | Visualizzazione transiti del giorno, cronometro tempo di sosta in tempo reale, DPI checklist. | Interval refresh asincrono (30s) senza ricaricare la pagina. |
-| **Registro di Audit** | ✅ Pronto | Tracciamento asincrono "fire-and-forget" delle operazioni critiche con differenze di stato. | Tabella `audit_logs` con archiviazione delta JSON (`oldValue` vs `newValue`). |
+<!-- slide -->
+
+# 🔴 Slide 5: Roadmap Futura (Must & Should)
+### *Le prossime tappe chiave per il rilascio in produzione*
+
+```
+[MUST] Rilascio Immediato
+├── Sostegno Multilingua (i18n): Traduzione del portale in Inglese, Polacco e Rumeno per autisti esteri.
+└── Validazione Targhe/IVA: Controlli regex severi sugli input per evitare anomalie nei database.
+```
+
+```
+[SHOULD] Alta Priorità
+├── Notifiche Email Automatiche: Invio automatico del pass e del QR Code via mail alla prenotazione.
+├── SMS Driver Call: Invio automatico di un SMS all'autista per segnalare la baia libera all'ingresso.
+└── Gestione Anagrafiche da UI: Pannello Admin per aggiungere/rimuovere Baie e Hub in autonomia.
+```
 
 > [!IMPORTANT]
-> **Sicurezza & Tracciabilità**: Ogni transito e variazione dei dati sensibili (compreso l'annullamento dei check-in o check-out) genera una traccia immutabile nel registro di audit comprensiva di IP e User-Agent.
+> Il supporto multilingua (i18n) per gli autisti è classificato come **P0 (Must)** perché l'80% delle incomprensioni e dei rallentamenti in portineria deriva da problemi linguistici al momento del check-in dei documenti.
+
+<!-- slide -->
+
+# 🟢 Slide 6: Visione Futura (Could & Won't)
+### *Integrazioni avanzate ed evoluzioni tecnologiche (V2)*
+
+```
+[COULD] Valore Aggiunto
+├── Yard Management Screen: Monitor piazzale esterno per la chiamata dei camion in attesa.
+└── Webhook API WMS/ERP: Integrazione automatica con i sistemi gestionali del magazzino Logistica Uno.
+```
+
+```
+[WON'T] Sviluppi Futuri (V2)
+└── Integrazione OCR Gate: Telecamere di lettura targa all'ingresso per check-in automatico.
+```
+
+> [!TIP]
+> L'integrazione di un tabellone Yard Management esterno riduce drasticamente l'esigenza di interazione fisica tra autista e portineria, incrementando la sicurezza del piazzale.
+````
 
 ---
 
-## 🚦 Roadmap delle Implementazioni Future (MoSCoW)
-
-Abbiamo classificato i prossimi sviluppi utilizzando il modello MoSCoW per delineare chiaramente la priorità di rilascio.
-
-### 🔴 MUST (Indispensabili per il lancio in produzione)
-*   **Supporto Multilingua (i18n)**:
-    *   *Descrizione*: Traduzione dell'interfaccia Vettori e del Pass Digitale in **Inglese, Polacco e Rumeno**.
-    *   *Motivazione*: Gli autisti dei vettori appartengono spesso a nazionalità estere; la barriera linguistica causa code e ritardi al gate.
-*   **Sanitizzazione e Validazione Targhe/Partita IVA**:
-    *   *Descrizione*: Controllo formale rigoroso degli input all'inserimento (regex specifiche per formati targhe europei e P.IVA).
-    *   *Motivazione*: Evita l'inserimento di dati sporchi che compromettono i report di portineria.
-
-### 🟡 SHOULD (Importanti ma non bloccanti)
-*   **Invio Mail Automatico**:
-    *   *Descrizione*: Invio automatico di una mail di conferma con il **Digital Pass (QR Code)** integrato o in allegato.
-    *   *Motivazione*: Agevola l'autista che può mostrare il pass direttamente dalla propria app di posta senza dover rientrare nel portale.
-*   **Notifiche SMS al Driver**:
-    *   *Descrizione*: All'ingresso del mezzo nel piazzale di attesa, un SMS notifica l'autista sul numero di baia assegnato.
-    *   *Motivazione*: Evita che l'autista debba scendere dalla cabina per chiedere istruzioni, velocizzando la viabilità interna.
-*   **Pannello Configurazione Depositi**:
-    *   *Descrizione*: Configurazione dinamica da interfaccia Admin del numero di baie attive, degli hub e degli orari di apertura del deposito.
-    *   *Motivazione*: Attualmente tali parametri sono statici (hard-coded in `constants.ts`).
-
-### 🟢 COULD (Valore aggiunto / Ottimizzazioni)
-*   **Pannello Yard Management (Tabellone Piazzale)**:
-    *   *Descrizione*: Una schermata ad alto contrasto da proiettare su monitor esterni per indicare lo stato della coda e la chiamata baia.
-    *   *Motivazione*: Riduce l'affollamento in portineria indirizzando autonomamente i driver in attesa.
-*   **Sincronizzazione API WMS/ERP**:
-    *   *Descrizione*: Esposizione di webhook/API per segnalare al sistema WMS di deposito l'avvenuto arrivo di un mezzo al gate.
-    *   *Motivazione*: Ottimizza la pianificazione del personale di magazzino in base ai transiti reali.
-
-### ⚪ WON'T (Sviluppi futuri per la V2)
-*   **Integrazione OCR (Lettura Targhe)**:
-    *   *Descrizione*: Utilizzo di telecamere per la lettura ottica della targa del camion al cancello d'ingresso per effettuare il check-in automatico.
-    *   *Motivazione*: Richiede investimenti hardware dedicati e integrazione con telecamere IP fisiche del magazzino.
+## 📄 Documentazione di Supporto
+Per ulteriori dettagli sull'applicazione e sulle specifiche di progetto, consultare i seguenti file nel workspace:
+*   [Funzionalità di LogiBook](file:///c:/Users/AlessandroBaiamonte/Desktop/progetto%20slotify/FUNZIONALITA_LOGIBOOK.txt) — Specifiche dettagliate dei moduli di sistema.
+*   [Valutazione Economica](file:///c:/Users/AlessandroBaiamonte/Desktop/progetto%20slotify/valutazione_economica.md) — Analisi dei costi, ROI e opzioni di commercializzazione (SaaS, Enterprise).
