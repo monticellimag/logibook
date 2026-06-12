@@ -15,6 +15,7 @@ const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 
 export function initDb() {
+  // Existing init logic remains for now to ensure tables exist
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
@@ -63,13 +64,51 @@ export function initDb() {
       createdAt TEXT,
       FOREIGN KEY(userId) REFERENCES users(id)
     );
+
+    CREATE TABLE IF NOT EXISTS audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT DEFAULT (datetime('now', 'localtime')),
+      userId TEXT,
+      userEmail TEXT,
+      userRole TEXT,
+      action TEXT,
+      entity TEXT,
+      entityId TEXT,
+      oldValue TEXT,
+      newValue TEXT,
+      ipAddress TEXT,
+      userAgent TEXT,
+      details TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS deposits (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL,
+      description TEXT
+    );
   `);
 
   // Add columns if they don't exist (Migrations)
-  try {
-    db.exec("ALTER TABLE bookings ADD COLUMN arrivalPhoto TEXT");
-  } catch (e) {
-    // Column already exists
+  const migrations = [
+    "ALTER TABLE bookings ADD COLUMN arrivalPhoto TEXT",
+    "ALTER TABLE users ADD COLUMN status TEXT DEFAULT 'ACTIVE'",
+    "ALTER TABLE users ADD COLUMN requested_at TEXT",
+    "ALTER TABLE users ADD COLUMN reviewed_at TEXT",
+    "ALTER TABLE users ADD COLUMN reviewed_by TEXT",
+    "ALTER TABLE users ADD COLUMN rejection_reason TEXT",
+    "ALTER TABLE users ADD COLUMN must_change_password INTEGER DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN temp_password_at TEXT",
+    "ALTER TABLE users ADD COLUMN interested_depots TEXT",
+    "ALTER TABLE users ADD COLUMN notes TEXT",
+    "ALTER TABLE bookings ADD COLUMN bay TEXT"
+  ];
+
+  for (const query of migrations) {
+    try {
+      db.exec(query);
+    } catch (e) {
+      // Column already exists
+    }
   }
 
   // Seed default users if empty
@@ -82,7 +121,7 @@ export function initDb() {
     `);
 
     db.transaction(() => {
-      insertUser.run(crypto.randomUUID(), 'admin@slotify.local', 'admin', 'Super Admin', 'admin', null, new Date().toISOString());
+      insertUser.run(crypto.randomUUID(), 'admin@logisticauno.it', 'admin', 'Super Admin', 'admin', null, new Date().toISOString());
       
       DEPOTS.forEach(depot => {
         insertUser.run(
@@ -103,3 +142,4 @@ export function initDb() {
 initDb();
 
 export default db;
+

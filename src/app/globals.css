@@ -17,6 +17,7 @@
   --color-foreground: var(--foreground);
   --font-inter: var(--font-inter);
   --font-outfit: var(--font-outfit);
+  --font-roboto-condensed: var(--font-roboto-condensed);
   
   /* Custom Logistica Colors */
   --color-logistica-deep: var(--logistica-blue-deep);
@@ -109,3 +110,15 @@ body {
 .animate-fade-in-up {
   animation: fade-in-up 0.8s ease-out forwards;
 }
+
+/* Fix per la leggibilità delle opzioni nei selettori */
+option {
+  color: #0f172a;
+  background-color: #ffffff;
+}
+
+.dark option {
+  color: #ffffff;
+  background-color: #0f172a;
+}
+

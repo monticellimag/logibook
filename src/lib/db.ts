@@ -18,3 +18,5 @@ export function readDb(table: string) {
 
 // Inizializza al caricamento
 init();
+
+export default db;

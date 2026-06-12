@@ -28,6 +28,6 @@ export const OPERATION_TYPES = [
 
 export const DIFFICULTY_LEVELS = [
   { id: 'standard', name: 'Standard', color: 'emerald' },
-  { id: 'difficult', name: 'Difficoltoso', color: 'amber' },
+  { id: 'difficult', name: 'Straordinario', color: 'amber' },
   { id: 'waiting', name: 'In attesa disposizioni', color: 'rose' }
 ];

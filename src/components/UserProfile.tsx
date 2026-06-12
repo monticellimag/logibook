@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { User, Building2, MapPin, Phone, UserRound, Mail, X, Save, ShieldCheck } from "lucide-react";
+import { User, Building2, MapPin, Phone, UserRound, Mail, X, Save, ShieldCheck, Key } from "lucide-react";
 
 type ProfileData = {
   id: string;
@@ -100,6 +100,14 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
               <p className="text-xs font-black text-indigo-600 dark:text-indigo-400 uppercase tracking-widest px-1">
                 {readOnly ? profile?.name : "Gestione Identità Aziendale"}
               </p>
+              {!readOnly && (
+                <a 
+                  href="/change-password" 
+                  className="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-800 text-[10px] font-black text-slate-600 dark:text-slate-400 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all uppercase tracking-tighter"
+                >
+                  <Key className="w-3 h-3" /> Cambia Password
+                </a>
+              )}
             </div>
           </div>
           <button onClick={onClose} className="p-3 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-2xl transition-colors">
@@ -130,7 +138,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                 </label>
                 <input 
                   disabled={readOnly}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
                   value={formData.name || ''} 
                   onChange={e => setFormData({...formData, name: e.target.value})}
                 />
@@ -143,7 +151,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                 </label>
                 <input 
                   disabled={readOnly}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
                   placeholder="IT00000000000"
                   value={formData.vatNumber || ''} 
                   onChange={e => setFormData({...formData, vatNumber: e.target.value})}
@@ -156,9 +164,10 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                   <Mail className="w-3 h-3" /> Email Contatto
                 </label>
                 <input 
-                  disabled={true}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white opacity-50 cursor-not-allowed font-bold"
-                  value={profile?.email || ''} 
+                  disabled={readOnly}
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  value={formData.email || ''} 
+                  onChange={e => setFormData({...formData, email: e.target.value})}
                 />
               </div>
 
@@ -169,7 +178,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                 </label>
                 <input 
                   disabled={readOnly}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
                   placeholder="+39 000 0000000"
                   value={formData.phone || ''} 
                   onChange={e => setFormData({...formData, phone: e.target.value})}
@@ -183,7 +192,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                 </label>
                 <input 
                   disabled={readOnly}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
                   value={formData.address || ''} 
                   onChange={e => setFormData({...formData, address: e.target.value})}
                 />
@@ -196,7 +205,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                 </label>
                 <input 
                   disabled={readOnly}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
                   value={formData.city || ''} 
                   onChange={e => setFormData({...formData, city: e.target.value})}
                 />
@@ -209,7 +218,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                 </label>
                 <input 
                   disabled={readOnly}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
                   value={formData.zipCode || ''} 
                   onChange={e => setFormData({...formData, zipCode: e.target.value})}
                 />
@@ -222,7 +231,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
                 </label>
                 <input 
                   disabled={readOnly}
-                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white disabled:opacity-70 disabled:cursor-not-allowed font-bold"
                   placeholder="Nome e Cognome del referente"
                   value={formData.contactPerson || ''} 
                   onChange={e => setFormData({...formData, contactPerson: e.target.value})}

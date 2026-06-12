@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import db from '@/lib/sqlite';
+import { db, bookings } from '@/db';
+import { eq, and, sql, between } from 'drizzle-orm';
 import { startOfMonth, endOfMonth, format } from 'date-fns';
 
 export async function GET(request: Request) {
@@ -13,21 +14,19 @@ export async function GET(request: Request) {
     const start = format(startOfMonth(targetDate), "yyyy-MM-dd");
     const end = format(endOfMonth(targetDate), "yyyy-MM-dd");
 
-    let query = `
-      SELECT date, COUNT(*) as count 
-      FROM bookings 
-      WHERE date BETWEEN ? AND ?
-    `;
-    let params: any[] = [start, end];
-
+    let conditions = [between(bookings.date, start, end)];
+    
     if (depotId) {
-      query += " AND depotId = ?";
-      params.push(depotId);
+      conditions.push(eq(bookings.depotId, depotId));
     }
 
-    query += " GROUP BY date";
-
-    const stats = db.prepare(query).all(params) as { date: string, count: number }[];
+    const stats = await db.select({
+      date: bookings.date,
+      count: sql<number>`count(*)`
+    })
+    .from(bookings)
+    .where(and(...conditions))
+    .groupBy(bookings.date);
 
     // Transform to map { "2026-04-15": 10 }
     const heatmap = stats.reduce((acc, curr) => {

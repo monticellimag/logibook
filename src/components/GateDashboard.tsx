@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Truck, LogOut, Home, Clock, Search, MapPin, CheckCircle2, User, Building2, LayoutDashboard, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Paperclip, Phone, UserCircle2, AlertCircle, Camera, ClipboardList, X } from "lucide-react";
+import { Truck, LogOut, Home, Clock, Search, MapPin, CheckCircle2, User, Building2, LayoutDashboard, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Paperclip, Phone, UserCircle2, AlertCircle, Camera, ClipboardList, X, Printer } from "lucide-react";
 import { DEPOTS, OPERATION_TYPES, DIFFICULTY_LEVELS } from "@/lib/constants";
 import UserProfile from "./UserProfile";
 
@@ -27,9 +27,19 @@ type Booking = {
   pallets: number;
   difficulty: string;
   isEmergency: number;
+  bay?: string;
+};
+
+const GATE_STATUS_LABELS: Record<string, string> = {
+  expected: "In Attesa",
+  arrived: "Arrivato",
+  loading: "In Carico",
+  unloading: "In Scarico",
+  completed: "Completato",
 };
 
 export default function GateDashboard({ adminUser }: { adminUser: any }) {
+  const [mounted, setMounted] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDepotId, setSelectedDepotId] = useState(adminUser.depotId || DEPOTS[0].id);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -45,12 +55,16 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   const formattedDate = format(currentDate, "yyyy-MM-dd");
   const currentDepot = DEPOTS.find(d => d.id === selectedDepotId);
 
+  const [now, setNow] = useState(new Date());
+
   useEffect(() => {
+    setMounted(true);
     fetchBookings();
     
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchBookings(true); // silent fetch
+      setNow(new Date()); // Update current time for timers
     }, 30000);
     
     return () => clearInterval(interval);
@@ -87,10 +101,15 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   
   const handleStatusChange = async (id: string, gateStatus: string) => {
     try {
+      const body: any = { gateStatus };
+      if (gateStatus === 'expected') {
+        body.operationStartedAt = null;
+        body.completedAt = null;
+      }
       const res = await fetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gateStatus }),
+        body: JSON.stringify(body),
       });
       if (res.ok) await fetchBookings();
     } catch (err) {
@@ -152,6 +171,10 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
     return Math.round(diff / 60000);
   };
 
+  const handlePrint = () => {
+    window.print();
+  };
+
   return (
     <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors">
       <header className="bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 transition-colors">
@@ -162,11 +185,17 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
             </div>
             <div>
               <h1 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-blue-500 tracking-tight">
-                Slotify Gate
+                LogiBook Gate
               </h1>
               <div className="flex items-center gap-1.5 leading-none">
                 <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse"></div>
                 <span className="text-[10px] font-black text-emerald-600 dark:text-emerald-400 uppercase tracking-widest">Live Monitor</span>
+              </div>
+            </div>
+            <div className="ml-6 pl-6 border-l border-slate-200 dark:border-slate-800 hidden md:block">
+              <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-50 dark:bg-slate-800/50 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm">
+                <MapPin className="w-4 h-4 text-indigo-600 animate-pulse" />
+                <span className="text-sm font-black text-slate-800 dark:text-slate-100 uppercase tracking-tight">Hub {currentDepot?.name}</span>
               </div>
             </div>
           </div>
@@ -175,7 +204,7 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                <select 
                 value={selectedDepotId} 
                 onChange={(e) => setSelectedDepotId(e.target.value)}
-                className="text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 outline-none dark:text-slate-100 font-semibold"
+                className="text-sm bg-white text-slate-800 dark:bg-slate-800 border-2 border-indigo-100 dark:border-slate-700 rounded-xl px-4 py-2 outline-none dark:text-slate-100 font-black shadow-sm hover:border-indigo-300 transition-colors cursor-pointer appearance-auto"
               >
                 {DEPOTS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
               </select>
@@ -228,6 +257,13 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
             >
               <ClipboardList className="w-5 h-5 text-amber-500 group-hover:scale-110 transition-transform" />
               Scansiona QR
+            </button>
+            <button 
+              onClick={handlePrint}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-indigo-600 border border-indigo-700 rounded-xl font-bold text-white hover:bg-indigo-700 transition-all shadow-sm group"
+            >
+              <Printer className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              Stampa Report
             </button>
           </div>
         </div>
@@ -306,16 +342,21 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                     <div className="flex items-center gap-2">
                        {isEmergency ? <AlertCircle className="w-5 h-5 text-white animate-pulse" /> : <Clock className={`w-5 h-5 ${isFast ? 'text-slate-400' : booking.difficulty === 'standard' ? 'text-emerald-500' : booking.difficulty === 'difficult' ? 'text-amber-600' : 'text-rose-500'}`} />}
                        <span className={`text-lg font-bold ${timeColor}`}>{booking.time} {isEmergency && "(URGENTE)"}</span>
+                       {booking.bay && (
+                         <span className="ml-3 px-3 py-0.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-[10px] font-black rounded-full shadow-sm animate-in zoom-in duration-300">
+                           BAIA {booking.bay}
+                         </span>
+                       )}
                     </div>
                       <div>
                         <span className={`text-xs font-bold px-3 py-1 rounded-full ${booking.operationType === 'Scarico' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
                           {booking.operationType || 'Carico'}
                         </span>
-                         {booking.attachment && (
-                            <a href={booking.attachment} target="_blank" rel="noopener noreferrer" className="ml-2 inline-flex items-center text-slate-400 hover:text-indigo-600 transition-colors" title="Vedi Allegato">
-                              <Paperclip className="w-4 h-4" />
-                            </a>
-                         )}
+                          {booking.attachment && (
+                            <div className="ml-2 flex items-center" title="Allegato disponibile">
+                              <Paperclip className="w-3.5 h-3.5 text-indigo-500 animate-pulse drop-shadow-[0_0_5px_rgba(79,70,229,0.6)]" />
+                            </div>
+                          )}
                       </div>
                     </div>
 
@@ -372,18 +413,70 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                       </div>
                     )}
 
-                    <div className="grid grid-cols-2 gap-3 mb-6">
-                      <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                      <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 min-h-[60px]">
                         <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mb-1">Riferimento / Bancali</p>
-                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200 break-words">
                           {booking.orderRef} — <span className={booking.pallets < 5 ? 'text-indigo-600 font-black' : ''}>{booking.pallets} PLT</span>
                         </p>
                       </div>
-                      <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700">
+                      <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 min-h-[60px]">
                         <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mb-1">Note</p>
-                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 line-clamp-1 italic" title={booking.notes}>{booking.notes || '—'}</p>
+                        <p className="text-xs font-medium text-slate-700 dark:text-slate-300 break-words italic" title={booking.notes}>{booking.notes || '—'}</p>
                       </div>
                     </div>
+
+                    {isInGate && booking.operationStartedAt && (
+                      <div className="mb-6 animate-in fade-in slide-in-from-top-2 duration-500">
+                         <div className="flex items-center justify-between p-4 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-200 dark:shadow-none">
+                            <div className="flex items-center gap-3">
+                               <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                                  <Clock className="w-5 h-5 text-white animate-pulse" />
+                               </div>
+                               <div>
+                                  <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest leading-none mb-1">Tempo in Magazzino</p>
+                                  <p className="text-xl font-black">
+                                    {(() => {
+                                      const start = new Date(booking.operationStartedAt!);
+                                      const mins = Math.floor((now.getTime() - start.getTime()) / 60000);
+                                      const h = Math.floor(mins / 60) ;
+                                      const m = mins % 60;
+                                      return h > 0 ? `${h}h ${m}m` : `${m} min`;
+                                    })()}
+                                  </p>
+                               </div>
+                            </div>
+                             <div className="text-right">
+                                <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest leading-none mb-1">Arrivo alle</p>
+                                <p className="text-sm font-black">{new Date(booking.operationStartedAt!).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' })}</p>
+                             </div>
+                         </div>
+                      </div>
+                    )}
+                    
+                    {booking.attachment && (
+                      <div className="mb-6 animate-in fade-in zoom-in duration-300">
+                        <a 
+                          href={booking.attachment} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="w-full flex items-center justify-between p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800/50 rounded-2xl group hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-all shadow-sm"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-lg shadow-indigo-200 dark:shadow-none group-hover:scale-110 transition-transform">
+                              <Paperclip className="w-5 h-5" />
+                            </div>
+                            <div className="text-left">
+                              <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest leading-none mb-1">Documentazione</p>
+                              <p className="text-sm font-black text-indigo-900 dark:text-indigo-100">VEDI ALLEGATO (DDT/PATENTE)</p>
+                            </div>
+                          </div>
+                          <div className="bg-white dark:bg-slate-800 p-2 rounded-lg shadow-sm">
+                             <ChevronRight className="w-4 h-4 text-indigo-600" />
+                          </div>
+                        </a>
+                      </div>
+                    )}
 
                     {!isCompleted && (
                       <div className="space-y-4 mt-auto">
@@ -399,6 +492,20 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                              </button>
                           )}
                         </div>
+                        {isInGate && (
+                          <div className="text-center">
+                            <button 
+                              onClick={() => {
+                                if(confirm("Sei sicuro di voler annullare la registrazione di arrivo? Il cronometro verrà azzerato.")) {
+                                  handleStatusChange(booking.id, 'expected');
+                                }
+                              }} 
+                              className="text-[10px] font-bold text-slate-400 hover:text-rose-500 transition-colors uppercase tracking-tight"
+                            >
+                              Annulla registrazione arrivo
+                            </button>
+                          </div>
+                        )}
                       </div>
                     )}
                     
@@ -441,67 +548,182 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
         <UserProfile userId={selectedUserIdProfile} readOnly onClose={() => setShowProfile(false)} />
       )}
 
-      {/* Arrival Confirmation Modal */}
-      {showArrivalModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300">
-            <div className="bg-amber-500 p-6 flex items-center justify-between text-white">
-               <div className="flex items-center gap-3">
-                  <Truck className="w-8 h-8" />
-                  <div>
-                    <h3 className="text-xl font-black uppercase tracking-tight">Registra Arrivo Mezzo</h3>
-                    <p className="text-xs font-bold opacity-80 uppercase tracking-widest">{showArrivalModal.time} — {showArrivalModal.licensePlate}</p>
-                  </div>
-               </div>
-               <button onClick={() => setShowArrivalModal(null)} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
-                 <X className="w-6 h-6" />
-               </button>
-            </div>
-            
-            <div className="p-8">
-              <div className="grid grid-cols-2 gap-4 mb-8">
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vettore</p>
-                   <p className="font-bold text-slate-800 dark:text-slate-200">{showArrivalModal.carrierName}</p>
-                </div>
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
-                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Azienda</p>
-                   <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{showArrivalModal.company || "—"}</p>
-                </div>
-              </div>
+  {/* Arrival Confirmation Modal */}
+  {showArrivalModal && (
+    <ArrivalModal 
+      booking={showArrivalModal} 
+      onClose={() => setShowArrivalModal(null)} 
+      onConfirm={async (id, bay) => {
+        try {
+          const res = await fetch(`/api/bookings/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ gateStatus: 'arrived', bay }),
+          });
+          if (res.ok) await fetchBookings();
+        } catch (err) {
+          console.error("Error updating status:", err);
+        }
+        setShowArrivalModal(null);
+      }}
+    />
+  )}
 
-              <div className="flex flex-col gap-4">
-                 <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800/50 flex items-start gap-4">
-                    <div className="p-2 bg-amber-500 rounded-lg text-white mt-1">
-                      <AlertCircle className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-bold text-amber-900 dark:text-amber-400">Verifica documenti e DPI</p>
-                      <p className="text-xs text-amber-800/70 dark:text-amber-500/70 italic">Assicurarsi che l'autista indossi scarpe antinfortunistiche e gilet ad alta visibilità prima di procedere al gate.</p>
-                    </div>
-                 </div>
-
-                 <button 
-                   onClick={() => {
-                     handleStatusChange(showArrivalModal.id, 'arrived');
-                     setShowArrivalModal(null);
-                   }}
-                   className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-lg font-black shadow-xl transition-all active:scale-95 hover:bg-slate-800 dark:hover:bg-slate-100 flex items-center justify-center gap-2"
-                 >
-                   <CheckCircle2 className="w-6 h-6" /> CONFERMA INGRESSO GATE
-                 </button>
-                 
-                 <button 
-                   onClick={() => setShowArrivalModal(null)}
-                   className="w-full py-3 bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all"
-                 >
-                   ANNULLA
-                 </button>
-              </div>
-            </div>
+      {/* Print-only Layout */}
+      <div className="hidden print:block p-8 bg-white text-black">
+        <div className="flex justify-between items-start mb-8 border-b-2 border-slate-900 pb-4">
+          <div>
+            <h1 className="text-2xl font-black uppercase">Report Giornaliero Mezzi</h1>
+            <p className="text-sm font-bold text-slate-600">{currentDepot?.name} — {format(currentDate, "EEEE d MMMM yyyy", { locale: it })}</p>
+          </div>
+          <div className="text-right">
+            <p className="text-xs font-black">LOGIBOOK GATE SYSTEM</p>
+            <p className="text-[10px]">Generato il: {mounted ? new Date().toLocaleString('it-IT') : '—'}</p>
           </div>
         </div>
-      )}
+
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-slate-100">
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Ora</th>
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Targa</th>
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Baia</th>
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Vettore / Autista</th>
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Operazione</th>
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Ordine</th>
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Bancali</th>
+              <th className="border border-slate-300 p-2 text-[10px] uppercase font-black text-left">Stato</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredBookings.map((b) => (
+              <tr key={b.id}>
+                <td className="border border-slate-300 p-2 text-xs font-bold">{b.time}</td>
+                <td className="border border-slate-300 p-2 text-xs font-black">{b.licensePlate}</td>
+                <td className="border border-slate-300 p-2 text-xs font-black text-indigo-600 text-center">{b.bay || '—'}</td>
+                <td className="border border-slate-300 p-2 text-xs">
+                  <div className="font-bold">{b.company}</div>
+                  <div className="text-[10px] text-slate-500">{b.carrierName}</div>
+                </td>
+                <td className="border border-slate-300 p-2 text-xs">{b.operationType}</td>
+                <td className="border border-slate-300 p-2 text-xs font-mono">{b.orderRef}</td>
+                <td className="border border-slate-300 p-2 text-xs font-bold text-center">{b.pallets}</td>
+                <td className="border border-slate-300 p-2 text-[10px] font-bold uppercase text-center">
+                  {GATE_STATUS_LABELS[b.gateStatus] || GATE_STATUS_LABELS.expected}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <div className="mt-12 grid grid-cols-3 gap-8">
+          <div className="border-t border-black pt-2 text-center">
+            <p className="text-[10px] font-bold uppercase">Firma Portineria</p>
+          </div>
+          <div className="border-t border-black pt-2 text-center">
+            <p className="text-[10px] font-bold uppercase">Firma Responsabile</p>
+          </div>
+          <div className="border-t border-black pt-2 text-center">
+            <p className="text-[10px] font-bold uppercase">Note Hub</p>
+          </div>
+        </div>
+      </div>
+
+      <style jsx global>{`
+        @media print {
+          body * {
+            visibility: hidden;
+          }
+          .print\:block, .print\:block * {
+            visibility: visible;
+          }
+          .print\:block {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+          }
+          @page {
+            size: A4;
+            margin: 1cm;
+          }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+function ArrivalModal({ booking, onClose, onConfirm }: { booking: Booking, onClose: () => void, onConfirm: (id: string, bay: string) => void }) {
+  const [bay, setBay] = useState("");
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-300">
+        <div className="bg-amber-500 p-6 flex items-center justify-between text-white">
+           <div className="flex items-center gap-3">
+              <Truck className="w-8 h-8" />
+              <div>
+                <h3 className="text-xl font-black uppercase tracking-tight">Registra Arrivo Mezzo</h3>
+                <p className="text-xs font-bold opacity-80 uppercase tracking-widest">{booking.time} — {booking.licensePlate}</p>
+              </div>
+           </div>
+           <button onClick={onClose} className="p-2 hover:bg-white/20 rounded-xl transition-colors">
+             <X className="w-6 h-6" />
+           </button>
+        </div>
+        
+        <div className="p-8">
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Vettore</p>
+               <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{booking.carrierName}</p>
+            </div>
+            <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-2xl">
+               <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Azienda</p>
+               <p className="font-bold text-slate-800 dark:text-slate-200 truncate">{booking.company || "—"}</p>
+            </div>
+          </div>
+
+          <div className="mb-8">
+             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 text-center">ASSEGNAZIONE BAIA DI SCARICO/CARICO</p>
+             <input 
+               type="text" 
+               placeholder="Inserisci numero baia (es. 12)" 
+               value={bay}
+               onChange={(e) => setBay(e.target.value.toUpperCase())}
+               className="w-full text-center py-4 bg-slate-50 dark:bg-slate-800 border-2 border-amber-200 dark:border-amber-900/30 rounded-2xl text-2xl font-black text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-amber-500/20 transition-all placeholder:text-slate-300"
+               autoFocus
+             />
+          </div>
+
+          <div className="flex flex-col gap-4">
+             <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-2xl border border-amber-100 dark:border-amber-800/50 flex items-start gap-4">
+                <div className="p-2 bg-amber-500 rounded-lg text-white mt-1">
+                  <AlertCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-amber-900 dark:text-amber-400">Verifica documenti e DPI</p>
+                  <p className="text-xs text-amber-800/70 dark:text-amber-500/70 italic">Assicurarsi che l'autista indossi scarpe antinfortunistiche e gilet ad alta visibilità prima di procedere al gate.</p>
+                </div>
+             </div>
+
+             <button 
+               onClick={() => onConfirm(booking.id, bay)}
+               disabled={!bay}
+               className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-lg font-black shadow-xl transition-all active:scale-95 hover:bg-slate-800 dark:hover:bg-slate-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+             >
+               <CheckCircle2 className="w-6 h-6" /> CONFERMA INGRESSO GATE
+             </button>
+             
+             <button 
+               onClick={onClose}
+               className="w-full py-3 bg-white dark:bg-slate-800 text-slate-500 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold hover:bg-slate-50 transition-all"
+             >
+               ANNULLA
+             </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

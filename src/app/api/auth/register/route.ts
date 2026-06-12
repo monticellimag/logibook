@@ -1,18 +1,26 @@
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import db from '@/lib/sqlite';
-import { cookies } from 'next/headers';
+import { db, users } from '@/db';
+import { eq } from 'drizzle-orm';
+import { cookies, headers } from 'next/headers';
 import { getSession } from '@/lib/auth';
+import { logAudit } from '@/lib/audit';
+import { RegisterSchema } from '@/lib/schemas';
 
 // POST: Registra un nuovo utente (vettore self-register, o admin che crea utente)
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password, role, depotId } = body;
-
-    if (!name || !email || !password) {
-      return NextResponse.json({ error: 'Compila tutti i campi' }, { status: 400 });
+    const validation = RegisterSchema.safeParse(body);
+    
+    if (!validation.success) {
+      return NextResponse.json({ 
+        error: 'Dati non validi', 
+        details: validation.error.flatten().fieldErrors 
+      }, { status: 400 });
     }
+
+    const { name, email, password, role, depotId, vatNumber, contactPerson, phone, notes } = validation.data;
 
     // Solo un admin autenticato può creare utenti con ruoli diversi da 'user'
     const requestedRole = role || 'user';
@@ -23,37 +31,58 @@ export async function POST(request: Request) {
       }
     }
 
-    const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-    if (existing) {
+    const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+    if (existing.length > 0) {
       return NextResponse.json({ error: 'Email già registrata' }, { status: 409 });
     }
 
-    const newUser = {
-      id: crypto.randomUUID(),
+    const isSelfRegistration = requestedRole === 'user';
+    const status = isSelfRegistration ? 'PENDING' : 'ACTIVE';
+    const finalPassword = isSelfRegistration ? null : password;
+
+    const newUserId = crypto.randomUUID();
+    const createdAt = new Date().toISOString();
+
+    await db.insert(users).values({
+      id: newUserId,
       name,
       email,
-      password,
+      password: finalPassword || '',
       role: requestedRole,
       depotId: depotId || null,
-      createdAt: new Date().toISOString()
-    };
+      vatNumber: vatNumber || null,
+      contactPerson: contactPerson || null,
+      phone: phone || null,
+      notes: notes || null,
+      status: status,
+      requested_at: createdAt,
+      createdAt: createdAt
+    });
 
-    db.prepare('INSERT INTO users (id, email, password, name, role, depotId, createdAt) VALUES (@id, @email, @password, @name, @role, @depotId, @createdAt)').run(newUser);
+    // Audit Log
+    const headersList = await headers();
+    logAudit({
+      userId: newUserId,
+      userEmail: email,
+      userRole: requestedRole,
+      action: 'CREATE',
+      entity: 'user',
+      entityId: newUserId,
+      newValue: { id: newUserId, email: email, role: requestedRole, name: name },
+      ipAddress: headersList.get('x-forwarded-for') || '127.0.0.1',
+      userAgent: headersList.get('user-agent'),
+      details: `Nuovo utente creato (${requestedRole})`
+    });
 
-    // Auto login solo se auto-registrazione vettore
+    // Auto login rimosso: le richieste devono essere approvate dall'admin
     if (requestedRole === 'user') {
-      const sessionId = crypto.randomUUID();
-      db.prepare('INSERT INTO sessions (id, userId, createdAt) VALUES (?, ?, ?)').run(sessionId, newUser.id, new Date().toISOString());
-      (await cookies()).set('session_id', sessionId, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        path: '/'
-      });
-      return NextResponse.json({ success: true, role: newUser.role }, { status: 201 });
+      return NextResponse.json({ success: true, pending: true }, { status: 201 });
     }
 
-    return NextResponse.json({ success: true, user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role, depotId: newUser.depotId } }, { status: 201 });
+    return NextResponse.json({ 
+      success: true, 
+      user: { id: newUserId, name: name, email: email, role: requestedRole, depotId: depotId } 
+    }, { status: 201 });
   } catch (error) {
     console.error('Register error:', error);
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });

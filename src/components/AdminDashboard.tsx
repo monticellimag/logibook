@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
-import { Truck, ChevronLeft, ChevronRight, LogOut, Printer, Home, Download, Paperclip, Clock, User, MapPin, Users, Plus, Trash2, ShieldCheck, AlertCircle, Camera, Building2, Phone, UserCircle2, X } from "lucide-react";
+import { Truck, ChevronLeft, ChevronRight, LogOut, Printer, Home, Download, Paperclip, Clock, User, MapPin, Users, Plus, Trash2, ShieldCheck, AlertCircle, Camera, Building2, Phone, UserCircle2, X, History, UserCheck, Pencil, Key } from "lucide-react";
 import { DEPOTS } from "@/lib/constants";
 import UserProfile from "./UserProfile";
 
@@ -36,6 +36,10 @@ type Analytics = {
   reliability: number;
   peakHour: string;
   volumeByDay: { date: string, count: number }[];
+  sosCount?: number;
+  palletsIn?: number;
+  palletsOut?: number;
+  opDistrib?: { carico: number, scarico: number, entrambi: number };
 };
 
 export default function AdminDashboard({ adminUser }: { adminUser: any }) {
@@ -48,9 +52,13 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
   const [heatmapData, setHeatmapData] = useState<Record<string, number>>({});
   const [users, setUsers] = useState<any[]>([]);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user', depotId: '' });
-  const [userActionLoading, setUserActionLoading] = useState(false);
+  const [createUserLoading, setCreateUserLoading] = useState(false);
+  const [deleteUserLoading, setDeleteUserLoading] = useState(false);
+  const [updateUserLoading, setUpdateUserLoading] = useState(false);
   const [selectedUserIdProfile, setSelectedUserIdProfile] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
+  const [editingUser, setEditingUser] = useState<any>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
   const printRef = useRef<HTMLDivElement>(null);
 
@@ -134,6 +142,23 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
     window.print();
   };
 
+  const handleDownloadStatsCSV = async () => {
+    try {
+      const res = await fetch(`/api/bookings/export?month=${selectedMonth}&depotId=${selectedDepotId}`);
+      if (!res.ok) throw new Error("Errore nel download");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report_logibook_${selectedMonth}_depot_${selectedDepotId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert("Si è verificato un errore durante il download del report CSV.");
+    }
+  };
+
   const handleStatusChange = async (id: string, gateStatus: string) => {
     try {
       const res = await fetch(`/api/bookings/${id}`, {
@@ -149,7 +174,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    setUserActionLoading(true);
+    setCreateUserLoading(true);
     try {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
@@ -165,21 +190,61 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
     } catch (err: any) {
       alert(err.message);
     } finally {
-      setUserActionLoading(false);
+      setCreateUserLoading(false);
     }
   };
 
   const handleDeleteUser = async (id: string) => {
-    if (!confirm("Sei sicuro di voler eliminare questo utente?")) return;
+    if (!confirm("Sei sicuro di voler eliminare definitivamente questo utente? L'operazione è irreversibile.")) return;
+    setDeleteUserLoading(true);
     try {
       const res = await fetch('/api/users', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ id })
       });
-      if (res.ok) fetchUsers();
-    } catch (err) {
-      console.error("Error deleting user:", err);
+      
+      let data: any = {};
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json();
+      }
+
+      if (!res.ok) {
+        const errorText = data.details ? `${data.error}: ${data.details}` : (data.error || `Errore server (${res.status})`);
+        throw new Error(errorText);
+      }
+      
+      fetchUsers();
+    } catch (err: any) {
+      console.error("User action error:", err);
+      alert("Errore: " + err.message);
+    } finally {
+      setDeleteUserLoading(false);
+    }
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUser) return;
+    setUpdateUserLoading(true);
+    try {
+      const res = await fetch(`/api/users/${editingUser.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingUser)
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Errore durante l'aggiornamento");
+      
+      alert("Utente aggiornato con successo!");
+      setShowEditModal(false);
+      setEditingUser(null);
+      fetchUsers();
+    } catch (err: any) {
+      alert("Errore: " + err.message);
+    } finally {
+      setUpdateUserLoading(false);
     }
   };
 
@@ -244,55 +309,92 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
 
       <div className="min-h-screen bg-slate-100 dark:bg-slate-950 transition-colors">
         {/* Header */}
-        <header className="bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 no-print transition-colors">
-          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="bg-indigo-600 p-2 rounded-lg">
+        <header className="bg-white dark:bg-slate-900 shadow-sm border-b border-slate-200 dark:border-slate-800 sticky top-0 z-20 no-print transition-colors">
+          {/* Top Bar - Branding & User Actions */}
+          <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/50">
+            <div className="flex items-center gap-4">
+              <div className="bg-indigo-600 p-2 rounded-xl shadow-sm">
                 <Truck className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">Slotify</h1>
-                <p className="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">
+                <h1 className="text-xl font-black text-slate-900 dark:text-slate-100 tracking-tight">LogiBook</h1>
+                <p className="text-[10px] text-indigo-600 dark:text-indigo-400 font-black uppercase tracking-widest">
                   {adminUser.depotId ? `Admin ${currentDepot?.name}` : "Super Admin Modality"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-slate-600 dark:text-slate-300 hidden sm:block">👤 {adminUser.name}</span>
+            <div className="flex items-center gap-4">
               {!adminUser.depotId && (
                  <select 
                   value={selectedDepotId} 
                   onChange={(e) => setSelectedDepotId(e.target.value)}
-                  className="text-sm bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 outline-none dark:text-slate-100"
+                  className="text-sm bg-white text-slate-800 dark:bg-slate-800 border-2 border-indigo-100 dark:border-slate-700 rounded-xl px-4 py-2 outline-none dark:text-slate-100 font-black shadow-sm hover:border-indigo-300 transition-colors cursor-pointer appearance-auto"
                 >
                   {DEPOTS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               )}
-              <a href="/admin/gate" className="flex items-center gap-1.5 text-sm text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 px-3 py-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <MapPin className="w-4 h-4" /> Portineria
-              </a>
-               <button 
-                onClick={() => setView('agenda')}
-                className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl transition-colors ${view === 'agenda' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-              >
-                <Home className="w-4 h-4" /> Agenda
-              </button>
-              <button 
-                onClick={() => setView('users')}
-                className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl transition-colors ${view === 'users' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-              >
-                <Users className="w-4 h-4" /> Utenti
-              </button>
-              <button 
-                onClick={() => setView('stats')}
-                className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded-xl transition-colors ${view === 'stats' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
-              >
-                <ShieldCheck className="w-4 h-4" /> Statistiche
-              </button>
-              <button onClick={handleLogout} className="flex items-center gap-1.5 text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors">
-                <LogOut className="w-4 h-4" /> Esci
-              </button>
+              <div className="flex items-center gap-2 pl-4 border-l border-slate-200 dark:border-slate-700">
+                <button 
+                  onClick={() => {
+                    setSelectedUserIdProfile(null);
+                    setShowProfile(true);
+                  }}
+                  className="flex items-center gap-2 text-sm font-bold text-slate-700 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-3 py-2 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <UserCircle2 className="w-5 h-5" />
+                  <span className="hidden sm:block">{adminUser.name}</span>
+                </button>
+                <button onClick={handleLogout} className="p-2 text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-xl transition-colors" title="Esci">
+                  <LogOut className="w-5 h-5" />
+                </button>
+              </div>
             </div>
+          </div>
+
+          {/* Bottom Bar - Tabbed Navigation */}
+          <div className="max-w-6xl mx-auto px-4 h-14 flex items-center gap-1 overflow-x-auto no-scrollbar">
+            <button 
+              onClick={() => setView('agenda')}
+              className={`flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap ${view === 'agenda' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            >
+              <Home className="w-4 h-4" /> Planning
+            </button>
+            <button 
+              onClick={() => setView('users')}
+              className={`flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap ${view === 'users' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            >
+              <Users className="w-4 h-4" /> Utenti
+            </button>
+            <button 
+              onClick={() => setView('stats')}
+              className={`flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap ${view === 'stats' ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
+            >
+              <ShieldCheck className="w-4 h-4" /> Statistiche
+            </button>
+            
+            <div className="w-px h-6 bg-slate-200 dark:bg-slate-700 mx-2"></div>
+            
+            <a 
+              href="/admin/requests"
+              className="flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20"
+            >
+              <UserCheck className="w-4 h-4" /> Richieste
+            </a>
+            <a 
+              href="/admin/audit"
+              className="flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              <History className="w-4 h-4" /> Audit
+            </a>
+            
+            <div className="flex-1"></div>
+            
+            <a 
+              href="/admin/gate"
+              className="flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              <MapPin className="w-4 h-4" /> Portineria
+            </a>
           </div>
         </header>
 
@@ -332,7 +434,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
 
           {/* Intestazione stampa */}
           <div className="print-only mb-6 border-b pb-4">
-            <h1 className="text-3xl font-bold text-slate-900">Slotify — Planning {currentDepot?.name}</h1>
+            <h1 className="text-3xl font-bold text-slate-900">LogiBook — Planning {currentDepot?.name}</h1>
             <p className="text-lg text-slate-600 mt-1 capitalize">{format(currentDate, "EEEE d MMMM yyyy", { locale: it })}</p>
           </div>
 
@@ -497,6 +599,20 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
           </>
           ) : view === 'stats' ? (
             <div className="space-y-6">
+               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
+                 <div>
+                   <h2 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Report e Statistiche</h2>
+                   <p className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">Panoramica performance e download flussi mensili</p>
+                 </div>
+                 <button 
+                   onClick={handleDownloadStatsCSV}
+                   className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-4 rounded-2xl font-black uppercase tracking-tight transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
+                 >
+                   <Download className="w-5 h-5" />
+                   Scarica CSV ({format(new Date(parseInt(selectedMonth.split('-')[0]), parseInt(selectedMonth.split('-')[1]) - 1, 1), "MMM yyyy", { locale: it })})
+                 </button>
+               </div>
+
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
                   <div className="bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-sm">
                      <div className="p-3 bg-indigo-50 dark:bg-indigo-950/30 rounded-2xl w-fit mb-4">
@@ -533,28 +649,81 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
                         <AlertCircle className={`w-6 h-6 ${metrics?.sosCount && metrics.sosCount > 0 ? 'text-white' : 'text-rose-600 dark:text-rose-400'}`} />
                      </div>
                      <p className={`text-[10px] font-black uppercase tracking-widest mb-1 ${metrics?.sosCount && metrics.sosCount > 0 ? 'text-white/70' : 'text-slate-400'}`}>Urgenze SOS</p>
-                     <h4 className="text-3xl font-black tracking-tight">{metrics?.sosCount || 0}</h4>
-                  </div>
-                        <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white mb-8 tracking-tight uppercase">Trend Volumi Ultimi 7 Giorni</h3>
-                  <div className="h-64 flex items-end gap-3 px-4">
-                     {metrics?.volumeByDay.map((day, idx) => (
-                        <div key={idx} className="flex-1 flex flex-col items-center group">
-                           <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-t-xl relative overflow-hidden flex items-end transition-all hover:bg-slate-200 dark:hover:bg-slate-700" style={{ height: '100%' }}>
-                              <div 
-                                className="w-full bg-indigo-500/20 group-hover:bg-indigo-500/40 rounded-t-xl transition-all duration-700 ease-out"
-                                style={{ height: `${(day.count / Math.max(...metrics.volumeByDay.map(d => d.count), 1)) * 100}%` }}
-                              ></div>
-                           </div>
-                           <span className="text-[10px] font-black text-slate-400 uppercase mt-4 tracking-tighter">{format(new Date(day.date), "dd MMM", { locale: it })}</span>
-                           <span className="text-xs font-black text-slate-900 dark:text-white mt-1">{day.count}</span>
-                        </div>
-                     ))}
-                     {(!metrics || metrics.volumeByDay.length === 0) && (
-                        <div className="w-full h-full flex items-center justify-center text-slate-400 italic text-sm">Nessun dato disponibile</div>
-                     )}
+                     <h4 className={`text-3xl font-black tracking-tight ${metrics?.sosCount && metrics.sosCount > 0 ? 'text-white' : 'text-slate-900 dark:text-white'}`}>{metrics?.sosCount || 0}</h4>
                   </div>
                </div>
+
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                  {/* Flussi Fisici Section */}
+                  <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col">
+                     <h3 className="text-xl font-black text-slate-900 dark:text-white mb-6 tracking-tight uppercase">Flussi Fisici e Operatività (7gg)</h3>
+                     
+                     <div className="flex flex-col sm:flex-row items-center gap-4 mb-8">
+                       <div className="flex-1 w-full bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                         <div className="flex items-center gap-2 mb-2">
+                           <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bancali IN (Scarico)</p>
+                         </div>
+                         <h4 className="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tight">{metrics?.palletsIn || 0}</h4>
+                       </div>
+                       <div className="flex-1 w-full bg-slate-50 dark:bg-slate-800/50 p-5 rounded-2xl border border-slate-100 dark:border-slate-700">
+                         <div className="flex items-center gap-2 mb-2">
+                           <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Bancali OUT (Carico)</p>
+                         </div>
+                         <h4 className="text-3xl font-black text-blue-600 dark:text-blue-400 tracking-tight">{metrics?.palletsOut || 0}</h4>
+                       </div>
+                     </div>
+
+                     {/* Distribuzione Operazioni */}
+                     <h4 className="text-xs font-black text-slate-500 uppercase tracking-widest mb-4 mt-2">Distribuzione Operazioni</h4>
+                     <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-700">
+                        {(() => {
+                          const carico = metrics?.opDistrib?.carico || 0;
+                          const scarico = metrics?.opDistrib?.scarico || 0;
+                          const entrambi = metrics?.opDistrib?.entrambi || 0;
+                          const total = carico + scarico + entrambi;
+                          
+                          if (total === 0) {
+                            return (
+                              <div className="w-full h-8 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
+                                <span className="text-[10px] font-bold text-slate-400 uppercase">Nessun dato</span>
+                              </div>
+                            );
+                          }
+
+                          const pCarico = Math.round((carico / total) * 100);
+                          const pScarico = Math.round((scarico / total) * 100);
+                          const pEntrambi = 100 - pCarico - pScarico; // remaining
+
+                          return (
+                            <div>
+                               {/* Stacked Bar */}
+                               <div className="w-full h-4 flex rounded-full overflow-hidden mb-6">
+                                  {pScarico > 0 && <div style={{ width: `${pScarico}%` }} className="bg-emerald-500 transition-all"></div>}
+                                  {pCarico > 0 && <div style={{ width: `${pCarico}%` }} className="bg-blue-500 transition-all"></div>}
+                                  {pEntrambi > 0 && <div style={{ width: `${pEntrambi}%` }} className="bg-purple-500 transition-all"></div>}
+                               </div>
+                               {/* Legend */}
+                               <div className="flex flex-wrap justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
+                                     <span className="text-slate-500">Scarico ({pScarico}%)</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                     <span className="text-slate-500">Carico ({pCarico}%)</span>
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                     <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                                     <span className="text-slate-500">Entrambi ({pEntrambi}%)</span>
+                                  </div>
+                               </div>
+                            </div>
+                          );
+                        })()}
+                     </div>
+                  </div>
 
                {/* Heatmap Section */}
                <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 shadow-sm">
@@ -567,7 +736,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
                         type="month" 
                         value={selectedMonth} 
                         onChange={(e) => setSelectedMonth(e.target.value)}
-                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                        className="bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-bold text-slate-900 dark:text-white outline-none focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
                      />
                   </div>
 
@@ -597,7 +766,15 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
                            cells.push(
                               <div 
                                  key={dateStr}
-                                 className="aspect-square rounded-lg border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center group relative cursor-help transition-all hover:scale-105 hover:z-10 bg-white dark:bg-slate-900"
+                                 className={`aspect-square rounded-lg border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center group relative transition-all hover:scale-105 hover:z-10 bg-white dark:bg-slate-900 ${count > 0 ? 'cursor-pointer shadow-sm' : 'cursor-default'}`}
+                                 onClick={() => {
+                                   if (count > 0) {
+                                     // Prevent timezone offset bugs by explicitly parsing year, month, day
+                                     const [yyyy, mm, dd] = dateStr.split('-');
+                                     setCurrentDate(new Date(parseInt(yyyy), parseInt(mm) - 1, parseInt(dd), 12, 0, 0));
+                                     setView('agenda');
+                                   }
+                                 }}
                               >
                                  <div 
                                     className="absolute inset-0 rounded-lg transition-colors" 
@@ -633,8 +810,8 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
                         <span className="text-[10px] font-bold text-slate-400 uppercase">Saturo</span>
                      </div>
                   </div>
+                  </div>
                </div>
-         </div>
             </div>
           ) : (
             <div className="animate-in fade-in duration-500">
@@ -674,8 +851,8 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
                           </select>
                         </div>
                       )}
-                      <button disabled={userActionLoading} type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
-                        {userActionLoading ? "Creazione..." : <><Plus className="w-4 h-4"/> Crea Utente</>}
+                      <button disabled={createUserLoading} type="submit" className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-md transition-all flex items-center justify-center gap-2">
+                        {createUserLoading ? "Creazione..." : <><Plus className="w-4 h-4"/> Crea Utente</>}
                       </button>
                     </form>
                   </div>
@@ -716,9 +893,26 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
                                 {u.depotId ? DEPOTS.find(d => d.id === u.depotId)?.name : <span className="flex items-center gap-1 text-indigo-600 dark:text-indigo-400"><ShieldCheck className="w-3 h-3"/> Tutti</span>}
                               </td>
                               <td className="px-4 py-3 text-center">
-                                <button onClick={() => handleDeleteUser(u.id)} className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors">
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                                <div className="flex items-center justify-center gap-1">
+                                  <button 
+                                    onClick={() => {
+                                      setEditingUser({ ...u, password: '' });
+                                      setShowEditModal(true);
+                                    }} 
+                                    className="p-2 text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors"
+                                    title="Modifica"
+                                  >
+                                    <Pencil className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    disabled={deleteUserLoading}
+                                    onClick={() => handleDeleteUser(u.id)} 
+                                    className="p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-lg transition-colors disabled:opacity-50"
+                                    title="Elimina"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
                               </td>
                             </tr>
                           ))}
@@ -731,6 +925,113 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
           )}
         </main>
       </div>
+
+      {/* Digital Pass Modal (not for admin usually, but keep same structure) */}
+      
+      {showProfile && (
+        <UserProfile userId={selectedUserIdProfile || undefined} onClose={() => {
+          setShowProfile(false);
+          setSelectedUserIdProfile(null);
+        }} />
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-md rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
+              <div>
+                <h3 className="text-xl font-black text-slate-900 dark:text-white uppercase tracking-tight">Modifica Utente</h3>
+                <p className="text-xs text-slate-500 font-bold uppercase tracking-widest mt-1">ID: {editingUser.id.substring(0, 8)}...</p>
+              </div>
+              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <X className="w-5 h-5 text-slate-500" />
+              </button>
+            </div>
+            
+            <form onSubmit={handleUpdateUser} className="p-6 space-y-4">
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Nome Completo</label>
+                <input 
+                  required 
+                  type="text" 
+                  value={editingUser.name} 
+                  onChange={e => setEditingUser({...editingUser, name: e.target.value})} 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold dark:text-white"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Email</label>
+                <input 
+                  required 
+                  type="email" 
+                  value={editingUser.email} 
+                  onChange={e => setEditingUser({...editingUser, email: e.target.value})} 
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold dark:text-white"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ruolo</label>
+                  <select 
+                    value={editingUser.role} 
+                    onChange={e => setEditingUser({...editingUser, role: e.target.value})} 
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold dark:text-white"
+                  >
+                    <option value="user">Vettore</option>
+                    <option value="gate">Portineria</option>
+                    <option value="admin">Amministratore</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Deposito</label>
+                  <select 
+                    disabled={editingUser.role === 'admin' && !editingUser.depotId}
+                    value={editingUser.depotId || ""} 
+                    onChange={e => setEditingUser({...editingUser, depotId: e.target.value || null})} 
+                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500 transition-all font-bold dark:text-white disabled:opacity-50"
+                  >
+                    <option value="">Tutti / Super Admin</option>
+                    {DEPOTS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                <label className="block text-[10px] font-black text-rose-500 uppercase tracking-widest mb-1 flex items-center gap-2">
+                  <Key className="w-3 h-3" /> Reset Password
+                </label>
+                <input 
+                  type="password" 
+                  placeholder="Lascia vuoto per non cambiare"
+                  value={editingUser.password} 
+                  onChange={e => setEditingUser({...editingUser, password: e.target.value})} 
+                  className="w-full px-4 py-3 bg-rose-50/30 dark:bg-rose-950/10 border border-rose-100 dark:border-rose-900/30 rounded-xl outline-none focus:ring-2 focus:ring-rose-500 transition-all font-mono text-sm dark:text-white"
+                />
+                <p className="text-[10px] text-slate-400 mt-1 italic">Verrà criptata automaticamente salvando.</p>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button 
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="flex-1 py-3 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 font-bold rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-all"
+                >
+                  Annulla
+                </button>
+                <button 
+                  disabled={updateUserLoading}
+                  type="submit" 
+                  className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/20 transition-all flex items-center justify-center gap-2"
+                >
+                  {updateUserLoading ? "Salvataggio..." : "Salva Modifiche"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Profile Modal */}
       {showProfile && selectedUserIdProfile && (

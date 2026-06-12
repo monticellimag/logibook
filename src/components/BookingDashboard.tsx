@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { format, addDays, subDays, setHours, setMinutes, isAfter, startOfDay } from "date-fns";
 import { it } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Truck, CheckCircle2, Clock, MapPin, X, LogOut, Upload, User, Phone, Building2, ClipboardList, Calendar, AlertCircle, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Truck, CheckCircle2, Clock, MapPin, X, LogOut, Upload, User, Phone, Building2, ClipboardList, Calendar, AlertCircle, Plus, LayoutDashboard, UserCircle2 } from "lucide-react";
 import { DEPOTS, OPERATION_TYPES } from "@/lib/constants";
 import UserProfile from "./UserProfile";
 
@@ -21,6 +21,7 @@ type Booking = {
   status: 'pending' | 'completed';
   pallets: number;
   difficulty: string;
+  operationType: string;
 };
 
 const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
@@ -28,12 +29,7 @@ const EXTRA_HOURS = ["17:00", "18:00", "19:00", "20:00", "21:00", "22:00"];
 
 export default function BookingDashboard({ user }: { user: any }) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDepotId, setSelectedDepotId] = useState(() => {
-    if (typeof window !== 'undefined') {
-       return localStorage.getItem('slotify_last_depot') || DEPOTS[0].id;
-    }
-    return DEPOTS[0].id;
-  });
+  const [selectedDepotId, setSelectedDepotId] = useState(DEPOTS[0].id);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -45,13 +41,15 @@ export default function BookingDashboard({ user }: { user: any }) {
   const [heatmap, setHeatmap] = useState<Record<string, number>>({});
   const [selectedPass, setSelectedPass] = useState<Booking | null>(null);
   
-  // Customization & Persistence
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>(() => {
-    if (typeof window !== 'undefined') {
-       return (localStorage.getItem('slotify_view_mode') as 'grid' | 'table') || 'grid';
-    }
-    return 'grid';
-  });
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
+
+  useEffect(() => {
+    const lastDepot = localStorage.getItem('slotify_last_depot');
+    const savedView = localStorage.getItem('slotify_view_mode') as 'grid' | 'table';
+    
+    if (lastDepot) setSelectedDepotId(lastDepot);
+    if (savedView) setViewMode(savedView);
+  }, []);
   const [driverName, setDriverName] = useState("");
   const [licensePlate, setLicensePlate] = useState("");
   const [company, setCompany] = useState(user.name || "");
@@ -60,10 +58,31 @@ export default function BookingDashboard({ user }: { user: any }) {
   const [notes, setNotes] = useState("");
   const [operationType, setOperationType] = useState(OPERATION_TYPES[0]);
   const [macroActivity, setMacroActivity] = useState<'Scarico' | 'Carico' | 'Entrambi'>('Scarico');
-  const [pallets, setPallets] = useState<number>(0);
+  const [pallets, setPallets] = useState<number | string>(0);
   const [file, setFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState<'Scarico' | 'Carico'>('Scarico');
+  const [operationTypeScarico, setOperationTypeScarico] = useState(OPERATION_TYPES[0]);
+  const [palletsScarico, setPalletsScarico] = useState<number | string>(0);
+  const [operationTypeCarico, setOperationTypeCarico] = useState(OPERATION_TYPES[0]);
+  const [palletsCarico, setPalletsCarico] = useState<number | string>(0);
+  const [orderRefScarico, setOrderRefScarico] = useState("");
+  const [orderRefCarico, setOrderRefCarico] = useState("");
 
   const formattedDate = format(currentDate, "yyyy-MM-dd");
+  const isToday = formattedDate === format(new Date(), "yyyy-MM-dd");
+  
+  const isFormValid = useMemo(() => {
+    // Base mandatory fields for everyone
+    const baseValid = driverName.trim() !== "" && licensePlate.trim() !== "" && selectedSlot !== "";
+    
+    if (!baseValid) return false;
+
+    if (macroActivity === 'Entrambi') {
+      return (Number(palletsScarico) > 0) && (Number(palletsCarico) > 0) && (orderRefScarico.trim() !== "") && (orderRefCarico.trim() !== "");
+    }
+    return Number(pallets) > 0 && orderRef.trim() !== "";
+  }, [macroActivity, pallets, palletsScarico, palletsCarico, orderRef, orderRefScarico, orderRefCarico, driverName, licensePlate, selectedSlot]);
+
   const isSlotInPast = (slotTime: string) => {
     const now = new Date();
     const [h, m] = slotTime.split(':').map(Number);
@@ -71,11 +90,6 @@ export default function BookingDashboard({ user }: { user: any }) {
     slotDate.setHours(h, m, 0, 0);
     return isAfter(now, slotDate);
   };
-
-  const isTimeLocked = isSlotInPast("23:59"); // Just a placeholder, better check per slot
-  
-  // Real logic: a slot is locked if it's in the past (date or time)
-  // We don't want a "15:00 day before" lockout anymore as it blocks next-day bookings.
 
   useEffect(() => {
     fetchBookings();
@@ -136,6 +150,13 @@ export default function BookingDashboard({ user }: { user: any }) {
     setNotes("");
     setPallets(0);
     setOperationType(OPERATION_TYPES[0]);
+    setOperationTypeScarico(OPERATION_TYPES[0]);
+    setPalletsScarico(0);
+    setOperationTypeCarico(OPERATION_TYPES[0]);
+    setPalletsCarico(0);
+    setOrderRefScarico("");
+    setOrderRefCarico("");
+    setActiveTab('Scarico');
     setFile(null);
   };
 
@@ -146,7 +167,11 @@ export default function BookingDashboard({ user }: { user: any }) {
 
   const submitBooking = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSlot || !driverName || !licensePlate || !selectedDepotId || !orderRef) return;
+    const canSubmit = macroActivity === 'Entrambi' 
+      ? (orderRefScarico.trim() !== "" && orderRefCarico.trim() !== "")
+      : (orderRef.trim() !== "");
+
+    if (!selectedSlot || !driverName || !licensePlate || !selectedDepotId || !canSubmit) return;
 
     setIsBooking(true);
     setError(null);
@@ -160,15 +185,29 @@ export default function BookingDashboard({ user }: { user: any }) {
       formData.append('licensePlate', licensePlate);
       formData.append('company', company);
       formData.append('phone', phone);
-      formData.append('orderRef', orderRef);
+      const finalOrderRef = macroActivity === 'Entrambi'
+        ? `S:${orderRefScarico} | C:${orderRefCarico}`
+        : orderRef;
+
+      formData.append('orderRef', finalOrderRef);
       formData.append('notes', notes);
       
       const fullOperationType = macroActivity === 'Entrambi' 
         ? `Carico+Scarico: ${operationType}` 
         : `${macroActivity}: ${operationType}`;
         
+      const totalPallets = macroActivity === 'Entrambi' 
+        ? (Number(palletsScarico) || 0) + (Number(palletsCarico) || 0)
+        : pallets;
+
       formData.append('operationType', fullOperationType);
-      formData.append('pallets', String(pallets));
+      formData.append('pallets', String(totalPallets));
+      formData.append('operationTypeScarico', operationTypeScarico);
+      formData.append('palletsScarico', String(palletsScarico));
+      formData.append('operationTypeCarico', operationTypeCarico);
+      formData.append('palletsCarico', String(palletsCarico));
+      formData.append('orderRefScarico', orderRefScarico);
+      formData.append('orderRefCarico', orderRefCarico);
       formData.append('difficulty', 'standard');
       formData.append('isEmergency', String(isEmergencyMode));
       if (file) {
@@ -213,7 +252,7 @@ export default function BookingDashboard({ user }: { user: any }) {
                 <Truck className="w-7 h-7 text-white" />
              </div>
              <div>
-                <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-blue-500 tracking-tighter">Slotify<span className="text-indigo-600">.</span></h1>
+                <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-blue-500 tracking-tighter">LogiBook<span className="text-indigo-600">.</span></h1>
                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Logistica Uno Ecosystem</p>
              </div>
           </div>
@@ -251,7 +290,7 @@ export default function BookingDashboard({ user }: { user: any }) {
               className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-xs font-black transition-all active:scale-95 shadow-lg ${isEmergencyMode ? 'bg-rose-600 text-white shadow-rose-200 ring-4 ring-rose-100 animate-bounce' : 'bg-rose-50 text-rose-600 hover:bg-rose-100 dark:bg-rose-950/30 shadow-slate-100'}`}
             >
               <AlertCircle className={`w-4 h-4 ${isEmergencyMode ? 'animate-pulse' : ''}`} />
-              {isEmergencyMode ? 'SOS / EMERGENZA' : 'SOS / EMERGENZA'}
+              {isEmergencyMode ? 'SOS ATTIVO' : 'SOS / EMERGENZA'}
             </button>
             <button onClick={handleLogout} className="text-slate-500 hover:text-slate-800 p-2 rounded-xl hover:bg-slate-100 transition-colors" title="Esci">
               <LogOut className="w-5 h-5" />
@@ -276,7 +315,11 @@ export default function BookingDashboard({ user }: { user: any }) {
                 onChange={(e) => setSelectedDepotId(e.target.value)}
                 className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl px-5 py-3 text-slate-900 dark:text-slate-100 font-bold focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all appearance-none"
               >
-                {DEPOTS.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                {DEPOTS.map(d => (
+                  <option key={d.id} value={d.id} className="text-slate-900 bg-white dark:text-white dark:bg-slate-900">
+                    {d.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
@@ -312,8 +355,9 @@ export default function BookingDashboard({ user }: { user: any }) {
                 const isFull = count >= 10;
                 const isPast = isSlotInPast(time);
                 
-                // Simplified lock: only if full or in the past
-                const isLocked = isFull || isPast;
+                // Rule: block today's bookings unless SOS/Emergency is active
+                // Also block full slots or slots in the past
+                const isLocked = isFull || isPast || (isToday && !isEmergencyMode);
                 
                 return (
                   <div key={time} onClick={() => !isLocked && handleSlotClick(time, isFull, isLocked)} className={`relative group p-6 rounded-2xl border transition-all duration-200 ${isLocked ? "bg-slate-50 dark:bg-slate-800/50 border-slate-200 dark:border-slate-800 opacity-70 cursor-not-allowed" : "bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-500 hover:shadow-md cursor-pointer hover:-translate-y-1"}`}>
@@ -343,7 +387,7 @@ export default function BookingDashboard({ user }: { user: any }) {
                           <div className="p-1.5 bg-emerald-500 rounded-lg text-white">
                             <CheckCircle2 className="w-4 h-4" />
                           </div>
-                          <span className="text-base font-black tracking-tight">{10 - count} POSTI LIBERI</span>
+                          <span className="text-base font-black tracking-tight text-emerald-700 group-hover:text-white">{10 - count} POSTI LIBERI</span>
                         </div>
                         <div className="flex items-center gap-2">
                            {bookings.some(b => b.time === time && b.id) && (
@@ -384,7 +428,7 @@ export default function BookingDashboard({ user }: { user: any }) {
                          const count = bookings.filter(b => b.time === time).length;
                          const isFull = count >= 10;
                          const isPast = isSlotInPast(time);
-                         const isLocked = isFull || isPast;
+                         const isLocked = isFull || isPast || (isToday && !isEmergencyMode);
                          
                          return (
                             <tr key={time} className={`group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${isLocked ? 'opacity-50' : ''}`}>
@@ -541,7 +585,10 @@ export default function BookingDashboard({ user }: { user: any }) {
                       <button
                         key={type}
                         type="button"
-                        onClick={() => setMacroActivity(type)}
+                        onClick={() => {
+                          setMacroActivity(type);
+                          if (type === 'Entrambi') setActiveTab('Scarico');
+                        }}
                         className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all ${
                           macroActivity === type 
                             ? type === 'Scarico' ? 'bg-amber-500 text-white shadow-md' : type === 'Carico' ? 'bg-blue-600 text-white shadow-md' : 'bg-indigo-600 text-white shadow-md'
@@ -554,60 +601,158 @@ export default function BookingDashboard({ user }: { user: any }) {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {macroActivity === 'Entrambi' && (
+                  <div className="space-y-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                    <div className="flex p-1 bg-slate-100 dark:bg-slate-800 rounded-xl gap-1">
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('Scarico')}
+                        className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-2 ${
+                          activeTab === 'Scarico' 
+                            ? 'bg-white dark:bg-slate-700 text-amber-600 shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${Number(palletsScarico) > 0 && orderRefScarico.trim() !== "" ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-slate-300'}`}></div>
+                        DETTAGLI SCARICO
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setActiveTab('Carico')}
+                        className={`flex-1 py-2 px-4 rounded-lg text-[10px] font-black transition-all flex items-center justify-center gap-2 ${
+                          activeTab === 'Carico' 
+                            ? 'bg-white dark:bg-slate-700 text-blue-600 shadow-sm' 
+                            : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${Number(palletsCarico) > 0 && orderRefCarico.trim() !== "" ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]' : 'bg-slate-300'}`}></div>
+                        DETTAGLI CARICO
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 p-6 rounded-3xl transition-colors duration-500 ${
+                  macroActivity === 'Entrambi' 
+                    ? activeTab === 'Scarico' ? 'bg-amber-500/5 border-2 border-dashed border-amber-200/50' : 'bg-blue-600/5 border-2 border-dashed border-blue-200/50'
+                    : ''
+                }`}>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
-                      {selectedSlot === "" ? "Ora Personalizzata (HH:mm)" : "Dettaglio Operazione"}
+                      {selectedSlot === "" ? "Ora Personalizzata (HH:mm)" : `Dettaglio Operazione ${macroActivity === 'Entrambi' ? activeTab.toUpperCase() : ''}`}
                     </label>
                     {selectedSlot === "" || EXTRA_HOURS.includes(selectedSlot) ? (
                       <select 
                         required 
                         value={selectedSlot} 
                         onChange={(e) => setSelectedSlot(e.target.value)} 
-                        className="w-full px-5 py-4 bg-rose-50 dark:bg-slate-800 border border-rose-200 dark:border-rose-700 rounded-2xl focus:ring-2 focus:ring-rose-500 outline-none transition-all dark:text-white font-bold"
+                        className="w-full px-5 py-4 bg-rose-50 dark:bg-slate-800 border border-rose-200 dark:border-rose-700 rounded-2xl focus:ring-2 focus:ring-rose-500 outline-none transition-all text-slate-900 dark:text-white font-bold"
                       >
-                        <option value="">Seleziona Orario Extra</option>
-                        {EXTRA_HOURS.map(h => <option key={h} value={h}>{h}</option>)}
+                        <option value="" className="text-slate-900 bg-white dark:text-white dark:bg-slate-900">Seleziona Orario Extra</option>
+                        {EXTRA_HOURS.map(h => <option key={h} value={h} className="text-slate-900 bg-white dark:text-white dark:bg-slate-900">{h}</option>)}
                       </select>
                     ) : (
-                      <select value={operationType} onChange={(e) => setOperationType(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white font-bold">
-                        {OPERATION_TYPES.map(op => <option key={op} value={op}>{op}</option>)}
+                      <select 
+                        value={macroActivity === 'Entrambi' ? (activeTab === 'Scarico' ? operationTypeScarico : operationTypeCarico) : operationType} 
+                        onChange={(e) => {
+                          if (macroActivity === 'Entrambi') {
+                            if (activeTab === 'Scarico') setOperationTypeScarico(e.target.value);
+                            else setOperationTypeCarico(e.target.value);
+                          } else {
+                            setOperationType(e.target.value);
+                          }
+                        }} 
+                        className={`w-full px-5 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 outline-none transition-all text-slate-900 dark:text-white font-bold ${
+                          macroActivity === 'Entrambi' ? (activeTab === 'Scarico' ? 'focus:ring-amber-500' : 'focus:ring-blue-600') : 'focus:ring-indigo-500'
+                        }`}
+                      >
+                        {OPERATION_TYPES.map(op => (
+                          <option key={op} value={op} className="text-slate-900 bg-white dark:text-white dark:bg-slate-900">
+                            {op}
+                          </option>
+                        ))}
                       </select>
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Numero Bancali</label>
-                    <input type="number" min="0" required value={pallets} onChange={(e) => setPallets(parseInt(e.target.value) || 0)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white font-bold" disabled={isBooking} />
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Numero Bancali {macroActivity === 'Entrambi' ? activeTab.toUpperCase() : ''}</label>
+                    <input 
+                      type="number" 
+                      min="0" 
+                      required 
+                      value={macroActivity === 'Entrambi' ? (activeTab === 'Scarico' ? palletsScarico : palletsCarico) : pallets} 
+                      onChange={(e) => {
+                        if (macroActivity === 'Entrambi') {
+                          if (activeTab === 'Scarico') setPalletsScarico(e.target.value);
+                          else setPalletsCarico(e.target.value);
+                        } else {
+                          setPallets(e.target.value);
+                        }
+                      }} 
+                      className={`w-full px-5 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 outline-none transition-all text-slate-900 dark:text-white font-bold ${
+                        macroActivity === 'Entrambi' ? (activeTab === 'Scarico' ? 'focus:ring-amber-500' : 'focus:ring-blue-600') : 'focus:ring-indigo-500'
+                      }`}
+                      disabled={isBooking} 
+                    />
                   </div>
+                  {macroActivity === 'Entrambi' && (
+                    <div className="space-y-2 md:col-span-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                      <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Riferimento Ordine {activeTab.toUpperCase()}</label>
+                      <input 
+                        type="text" 
+                        required 
+                        value={activeTab === 'Scarico' ? orderRefScarico : orderRefCarico} 
+                        onChange={(e) => {
+                          if (activeTab === 'Scarico') setOrderRefScarico(e.target.value);
+                          else setOrderRefCarico(e.target.value);
+                        }} 
+                        className={`w-full px-5 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 outline-none transition-all text-slate-900 dark:text-white font-bold ${
+                          activeTab === 'Scarico' ? 'focus:ring-amber-500' : 'focus:ring-blue-600'
+                        }`}
+                        placeholder={`Inserisci riferimento ordine per lo ${activeTab.toLowerCase()}`}
+                        disabled={isBooking} 
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Nome Autista</label>
-                    <input type="text" required value={driverName} onChange={(e) => setDriverName(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white font-bold" placeholder="Nome completo" disabled={isBooking} />
+                    <input type="text" required value={driverName} onChange={(e) => setDriverName(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-bold" placeholder="Nome completo" disabled={isBooking} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Targa Camion</label>
-                    <input type="text" required value={licensePlate} onChange={(e) => setLicensePlate(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white font-bold uppercase" placeholder="Es. AB123CD" disabled={isBooking} />
+                    <input type="text" required value={licensePlate} onChange={(e) => setLicensePlate(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-bold uppercase" placeholder="Es. AB123CD" disabled={isBooking} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Azienda</label>
-                    <input type="text" value={company} onChange={(e) => setCompany(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white font-bold" disabled={isBooking} />
+                    <input type="text" value={company} onChange={(e) => setCompany(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-bold" disabled={isBooking} />
                   </div>
                   <div className="space-y-2">
                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Telefono</label>
-                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white font-bold" placeholder="+39 3XX..." disabled={isBooking} />
+                    <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-bold" placeholder="+39 3XX..." disabled={isBooking} />
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Ordine di Carico/Scarico</label>
-                  <input type="text" required value={orderRef} onChange={(e) => setOrderRef(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all dark:text-white font-bold" placeholder="Riferimento ordine" disabled={isBooking} />
-                </div>
+                {macroActivity !== 'Entrambi' && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Ordine di Carico/Scarico</label>
+                    <input type="text" required value={orderRef} onChange={(e) => setOrderRef(e.target.value)} className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-indigo-500 outline-none transition-all text-slate-900 dark:text-white font-bold" placeholder="Riferimento ordine" disabled={isBooking} />
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Allegato (patente o DDT)</label>
                   <input type="file" onChange={(e) => setFile(e.target.files?.[0] || null)} className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
                 </div>
 
-                <button type="submit" disabled={isBooking} className="w-full py-5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl transition-all disabled:opacity-50 active:scale-[0.98]">
+                <button 
+                  type="submit" 
+                  disabled={isBooking || !isFormValid}
+                  className={`w-full py-5 rounded-2xl text-sm font-black uppercase tracking-widest transition-all active:scale-[0.98] shadow-xl ${
+                    !isFormValid 
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none' 
+                      : 'bg-indigo-600 text-white hover:bg-indigo-700 shadow-indigo-200'
+                  }`}
+                >
                   {isBooking ? "ELABORAZIONE..." : "CONFERMA PRENOTAZIONE"}
                 </button>
               </div>
@@ -617,7 +762,7 @@ export default function BookingDashboard({ user }: { user: any }) {
       )}
       {/* Profile Modal */}
       {showProfile && (
-        <UserProfile userId={user.id} onClose={() => setShowProfile(false)} />
+        <UserProfile onClose={() => setShowProfile(false)} />
       )}
 
       {/* Digital Pass Modal */}
@@ -632,7 +777,7 @@ export default function BookingDashboard({ user }: { user: any }) {
                   <Truck className="w-10 h-10 text-white" />
                 </div>
                 <h4 className="text-2xl font-black tracking-tight mb-1 uppercase">Pass di Accesso</h4>
-                <p className="text-white/70 text-sm font-medium">Slotify Logistics System</p>
+                <p className="text-white/70 text-sm font-medium">LogiBook Logistics System</p>
              </div>
              
              <div className="p-8 text-center">

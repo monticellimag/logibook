@@ -1,0 +1,44 @@
+# LOGIBOOK - Ecosistema Logistica Uno
+# Elenco Completo Funzionalità e Caratteristiche
+
+Data ultimo aggiornamento: 2026-05-13
+
+## 1. AREA VETTORI (Fornitori e Trasportatori)
+*   **Agenda Digitale**: Visualizzazione della disponibilità slot in tempo reale per ogni deposito.
+*   **Prenotazione Intelligente**: Sistema di booking con selezione oraria e tipo di operazione.
+*   **Gestione "ENTRAMBI" Avanzata**: Suddivisione granulare dei dettagli per le operazioni combinate. Interfaccia a tab coordinata (Scarico Arancio / Carico Blu) per l'inserimento separato di tipi operazione e numero bancali per ogni singola fase.
+*   **Validazione Infallibile**: Sistema di blocco automatico per evitare invii incompleti o bancali a zero nelle fasi selezionate.
+*   **Vincolo Temporale e SOS**: Blocco automatico delle prenotazioni per la giornata in corso (limite standard: ore 15:00 del giorno precedente). 
+*   **Modalità SOS / Emergenza**: Funzione speciale bypassante per inserimenti prioritari "last-minute" nella giornata corrente, con sblocco istantaneo dell'agenda tramite toggle di sicurezza.
+*   **Digital Pass**: Generazione automatica di un pass con QR Code per ogni prenotazione, utilizzabile per il check-in rapido al gate.
+*   **Gestione Documentale**: Caricamento allegati (DDT, patenti, documenti di trasporto) direttamente in fase di prenotazione.
+*   **Visualizzazione Flessibile**: Switch tra vista a Griglia (visuale) e vista a Tabella (dati) per l'agenda.
+*   **Profilo Utente**: Gestione dei dati aziendali e storicità delle operazioni.
+*   **Onboarding Sicuro**: Procedura di "Richiesta Accesso" con attesa di approvazione per garantire il controllo totale sulle utenze abilitate.
+
+## 2. AREA AMMINISTRATORI (Gestione Logistica)
+*   **Dashboard di Controllo (Layout Enterprise)**: Visione d'insieme dei transiti con navigazione a schede (Tabbed Navigation) ad alta usabilità, che elimina il sovraccarico visivo e separa nettamente gli strumenti operativi (Agenda, Utenti, Statistiche, Audit, Richieste).
+*   **Gestione Multi-Deposito Avanzata**: Selettore rapido Hub integrato direttamente nell'intestazione con design ad alto contrasto per un cambio di contesto immediato tra magazzini (Monticelli, Oppeano, Caivano, ecc.).
+*   **Pianificazione Avanzata**: Possibilità di modificare, cancellare o spostare le prenotazioni dei vettori.
+*   **Analisi Statistiche e Flussi Fisici**: Cruscotto dati avanzato con calcolo in tempo reale del volume "Bancali IN" e "Bancali OUT", unito a una barra grafica che mostra la distribuzione percentuale del tipo di operazioni (Carico/Scarico).
+*   **Esportazione Dati (Data Export CSV)**: Generazione dinamica e download di report completi per l'intero mese selezionato, compatibili con Excel (include dati granulari su targhe, baie, orari di ingresso/uscita, urgenze).
+*   **Calendario Heatmap Interattivo**: Mappa termica della saturazione mensile dotata di funzione "Jump-to-Day" (cliccando su un giorno critico si viene immediatamente portati all'agenda operativa di quella specifica data).
+*   **User Management**: Creazione e gestione degli account, valutazione delle richieste di accesso (Approvazione/Rifiuto) e generazione di password temporanee sicure.
+*   **Audit Dashboard**: Interfaccia protetta per l'ispezione dei log di sistema, con filtri avanzati e tracciamento puntuale delle variazioni JSON (old value vs new value).
+
+## 3. AREA HUB / PORTINERIA (Controllo Accessi)
+*   **Live Monitor Localizzato**: Dashboard in tempo reale con identificazione chiara dell'Hub (es. Monticelli d'Ongina) tramite icona MapPin animata.
+*   **Check-in Rapido e Assegnazione Baia**: Registrazione arrivo con assegnazione contestuale della Baia di scarico/carico per il coordinamento dei flussi.
+*   **Monitoraggio KPI Live**: Cronometro integrato per ogni mezzo al Gate, con calcolo in tempo reale del tempo di permanenza in magazzino (ore/minuti).
+*   **Stampa Report Giornaliero**: Generazione di fogli di marcia cartacei ottimizzati A4, completi di ora, targa, baia, riferimenti ordine e spazi per firme.
+*   **Documentazione e Foto**: Visualizzazione immediata degli allegati (DDT/Patenti) con pulsante ad alta visibilità e possibilità di caricare foto all'arrivo.
+*   **Gestione Errori (Undo)**: Funzione di annullamento registrazione arrivo/uscita con ripristino istantaneo dello stato e del cronometro.
+
+## 4. CARATTERISTICHE TECNICHE E DESIGN
+*   **Interfaccia Enterprise Premium**: Design moderno basato su glassmorphism, navigazione a schede pulita, ottimizzato per l'esperienza utente con particolare attenzione alla prevenzione della "visual fatigue".
+*   **Brand Identity**: Titolo "LOGIBOOK." con font Roboto Condensed Black, perfettamente allineato al logo Logistica Uno.
+*   **Sicurezza e Accessi**: Protezione delle rotte basata su ruoli (Vettore/Admin/Hub), password salvate esclusivamente con hash crittografici (bcrypt) e blocco del sistema con obbligo di cambio password al primo accesso.
+*   **Responsive Design**: Accessibile da PC, Tablet e Smartphone per l'uso in mobilità.
+*   **Infrastruttura**: Database Cloud PostgreSQL gestito tramite Supabase per scalabilità, accesso remoto e performance elevate.
+*   **Affidabilità e Backup**: Backup enterprise automatici gestiti dalla piattaforma Supabase, garantendo la ridondanza dei dati e la possibilità di point-in-time recovery.
+*   **Audit Logging Avanzato**: Sistema asincrono di tracciamento (fire-and-forget) delle azioni critiche (Autenticazione, Prenotazioni, Amministrazione Utenti) inclusivo di dati telemetrici (IP, User-Agent) e variazioni di stato, progettato per non bloccare mai le operazioni principali.

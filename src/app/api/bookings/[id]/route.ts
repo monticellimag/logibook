@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import db from '@/lib/sqlite';
+import { db, bookings } from '@/db';
+import { eq } from 'drizzle-orm';
+import { logAudit } from '@/lib/audit';
+import { headers } from 'next/headers';
 
 export async function DELETE(
   request: Request,
@@ -14,8 +17,8 @@ export async function DELETE(
   const { id } = await params;
 
   try {
-    const fetchStmt = db.prepare('SELECT * FROM bookings WHERE id = ?');
-    const booking = fetchStmt.get(id) as any;
+    const bookingResult = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    const booking = bookingResult[0];
 
     if (!booking) {
       return NextResponse.json({ error: 'Prenotazione non trovata' }, { status: 404 });
@@ -25,11 +28,26 @@ export async function DELETE(
       return NextResponse.json({ error: 'Non hai i permessi per cancellare prenotazioni di altri depositi.' }, { status: 403 });
     }
 
-    const deleteStmt = db.prepare('DELETE FROM bookings WHERE id = ?');
-    deleteStmt.run(id);
+    await db.delete(bookings).where(eq(bookings.id, id));
+
+    // Audit Log
+    const headersList = await headers();
+    logAudit({
+      userId: user.id,
+      userEmail: user.email,
+      userRole: user.role,
+      action: 'DELETE',
+      entity: 'booking',
+      entityId: id,
+      oldValue: booking,
+      ipAddress: headersList.get('x-forwarded-for') || '127.0.0.1',
+      userAgent: headersList.get('user-agent'),
+      details: `Eliminata prenotazione ${id}`
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    console.error('Delete booking error:', error);
     return NextResponse.json({ error: 'Errore server' }, { status: 500 });
   }
 }
@@ -49,8 +67,8 @@ export async function PATCH(
     const updates = await request.json();
     if (Object.keys(updates).length === 0) return NextResponse.json({ error: 'Dati mancanti' }, { status: 400 });
 
-    const fetchStmt = db.prepare('SELECT * FROM bookings WHERE id = ?');
-    const booking = fetchStmt.get(id) as any;
+    const bookingResult = await db.select().from(bookings).where(eq(bookings.id, id)).limit(1);
+    const booking = bookingResult[0];
 
     if (!booking) {
       return NextResponse.json({ error: 'Prenotazione non trovata' }, { status: 404 });
@@ -60,44 +78,47 @@ export async function PATCH(
       return NextResponse.json({ error: 'Non hai i permessi per modificare questa prenotazione.' }, { status: 403 });
     }
 
-    const setClauses: string[] = [];
-    const updateParams: any = { id };
-
-    if (updates.status !== undefined) {
-      setClauses.push('status = @status');
-      updateParams.status = updates.status;
-    }
+    const filteredUpdates: any = {};
+    if (updates.status !== undefined) filteredUpdates.status = updates.status;
+    if (updates.difficulty !== undefined) filteredUpdates.difficulty = updates.difficulty;
     
-    if (updates.difficulty !== undefined) {
-      setClauses.push('difficulty = @difficulty');
-      updateParams.difficulty = updates.difficulty;
-    }
-
     if (updates.gateStatus !== undefined) {
-      setClauses.push('gateStatus = @gateStatus');
-      updateParams.gateStatus = updates.gateStatus;
-      
+      filteredUpdates.gateStatus = updates.gateStatus;
       if (updates.gateStatus === 'arrived') {
-        setClauses.push('operationStartedAt = @operationStartedAt');
-        updateParams.operationStartedAt = new Date().toISOString();
+        filteredUpdates.operationStartedAt = new Date().toISOString();
       } else if (updates.gateStatus === 'completed') {
-        setClauses.push('completedAt = @completedAt');
-        updateParams.completedAt = new Date().toISOString();
+        filteredUpdates.completedAt = new Date().toISOString();
       }
     }
 
-    if (updates.arrivalPhoto !== undefined) {
-      setClauses.push('arrivalPhoto = @arrivalPhoto');
-      updateParams.arrivalPhoto = updates.arrivalPhoto;
+    if (updates.bay !== undefined) filteredUpdates.bay = updates.bay;
+    if (updates.arrivalPhoto !== undefined) filteredUpdates.arrivalPhoto = updates.arrivalPhoto;
+
+    if (Object.keys(filteredUpdates).length > 0) {
+      await db.update(bookings)
+        .set(filteredUpdates)
+        .where(eq(bookings.id, id));
+
+      // Audit Log
+      const headersList = await headers();
+      logAudit({
+        userId: user.id,
+        userEmail: user.email,
+        userRole: user.role,
+        action: 'UPDATE',
+        entity: 'booking',
+        entityId: id,
+        oldValue: booking,
+        newValue: { ...booking, ...filteredUpdates },
+        ipAddress: headersList.get('x-forwarded-for') || '127.0.0.1',
+        userAgent: headersList.get('user-agent'),
+        details: `Aggiornata prenotazione ${id}`
+      });
     }
 
-    if (setClauses.length > 0) {
-      const updateStmt = db.prepare(`UPDATE bookings SET ${setClauses.join(', ')} WHERE id = @id`);
-      updateStmt.run(updateParams);
-    }
-
-    return NextResponse.json({ ...booking, ...updateParams });
+    return NextResponse.json({ ...booking, ...filteredUpdates });
   } catch (error) {
+    console.error('Update booking error:', error);
     return NextResponse.json({ error: 'Errore server' }, { status: 500 });
   }
 }

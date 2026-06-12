@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Outfit } from "next/font/google";
+import { Inter, Outfit, Roboto_Condensed } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -12,8 +12,14 @@ const outfit = Outfit({
   subsets: ["latin"],
 });
 
+const robotoCondensed = Roboto_Condensed({
+  variable: "--font-roboto-condensed",
+  subsets: ["latin"],
+  weight: ["400", "700", "900"],
+});
+
 export const metadata: Metadata = {
-  title: "Slotify | Logistica Uno",
+  title: "LogiBook | Logistica Uno",
   description: "Piattaforma avanzata per la gestione intelligente dei transiti e prenotazioni slot.",
 };
 
@@ -25,7 +31,7 @@ export default function RootLayout({
   return (
     <html
       lang="it"
-      className={`${inter.variable} ${outfit.variable} h-full antialiased`}
+      className={`${inter.variable} ${outfit.variable} ${robotoCondensed.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col font-outfit" suppressHydrationWarning>
