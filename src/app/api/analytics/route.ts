@@ -49,10 +49,9 @@ export async function GET(request: Request) {
     });
     const peakHour = Object.entries(hourCounts).sort((a,b) => b[1] - a[1])[0]?.[0] || "-";
 
-    // 4. Volume by day (last 7 days)
-    // Usiamo sintassi PostgreSQL per l'intervallo temporale
+    // Usiamo sintassi SQLite per l'intervallo temporale
     let volumeConditions = [
-      sql`date >= (CURRENT_DATE - INTERVAL '7 days')::text`
+      sql`date(date) >= date('now', '-7 days')`
     ];
     if (depotId) {
       volumeConditions.push(eq(bookings.depotId, depotId));

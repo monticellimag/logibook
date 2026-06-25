@@ -1,14 +1,22 @@
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/better-sqlite3';
+import Database from 'better-sqlite3';
+import path from 'path';
+import fs from 'fs';
 import * as schema from './schema';
 
-// Use a singleton pool to avoid too many connections
-const globalForPool = global as unknown as { pool: Pool };
-const pool = globalForPool.pool || new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Ensure data directory exists
+const DATA_DIR = path.join(process.cwd(), 'data');
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPool.pool = pool;
+// Use a singleton db to avoid locking issues in dev
+const globalForDb = global as unknown as { sqlite: Database.Database };
+const sqlite = globalForDb.sqlite || new Database(path.join(DATA_DIR, 'slotify.db'));
 
-export const db = drizzle(pool, { schema });
+if (process.env.NODE_ENV !== 'production') globalForDb.sqlite = sqlite;
+
+sqlite.pragma('journal_mode = WAL');
+
+export const db = drizzle(sqlite, { schema });
 export * from './schema';
