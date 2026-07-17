@@ -1,4 +1,4 @@
-# Brainstorming: Valutazione Economica di Slotify (LogiBook)
+# Brainstorming: Valutazione Economica di LogiBook
 
 Questa analisi valuta l'app basandosi sulle funzionalità implementate, la qualità tecnica e il posizionamento nel mercato della logistica 3PL (Third Party Logistics).
 

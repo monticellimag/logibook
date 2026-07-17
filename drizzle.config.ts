@@ -6,6 +6,6 @@ export default defineConfig({
   out: './drizzle',
   dialect: 'sqlite',
   dbCredentials: {
-    url: path.join(process.cwd(), 'data', 'slotify.db'),
+    url: path.join(process.cwd(), 'data', 'logibook.db'),
   },
 });

@@ -13,7 +13,7 @@ if (fs.existsSync(envPath)) {
   }
 }
 
-const SQLITE_PATH = path.join(process.cwd(), 'data', 'slotify.db');
+const SQLITE_PATH = path.join(process.cwd(), 'data', 'logibook.db');
 const pgPool = new Pool({
   connectionString: process.env.DATABASE_URL,
 });

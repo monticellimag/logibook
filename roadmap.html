@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LogiBook - Project Presentation & Roadmap</title>
+    <!-- Caricamento libreria Mermaid.js per il rendering dei diagrammi -->
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'neutral' });
+    </script>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --bg: #f8fafc;
+            --surface: #ffffff;
+            --text: #0f172a;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --success-bg: #dcfce7;
+            --warning: #ca8a04;
+            --warning-bg: #fef08a;
+            --danger: #dc2626;
+            --danger-bg: #fee2e2;
+        }
+
+        /* Supporto alla Dark Mode del sistema operativo */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: #0f172a;
+                --surface: #1e293b;
+                --text: #f8fafc;
+                --text-muted: #94a3b8;
+                --border: #334155;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 2rem;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 3rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .subtitle {
+            font-size: 1.25rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            background-color: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 1rem;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        h2 {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.75rem;
+            margin-bottom: 1.5rem;
+            color: var(--primary);
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 0.75rem;
+        }
+
+        /* Stile container per i grafici Mermaid */
+        .mermaid {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin: 2rem 0;
+            overflow-x: auto;
+            text-align: center;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+        }
+        
+        @media (prefers-color-scheme: dark) {
+            .mermaid {
+                background: #f1f5f9; /* Colore chiaro per assicurare contrasto ai grafici */
+            }
+        }
+
+        ul {
+            list-style-type: none;
+        }
+
+        li {
+            margin-bottom: 0.75rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        li::before {
+            content: "•";
+            color: var(--primary);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .task-list li::before {
+            display: none;
+        }
+        
+        .task-list li {
+            padding-left: 0;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.25rem;
+            border-radius: 0.5rem;
+            background: var(--bg);
+            margin-bottom: 1rem;
+            border: 1px solid var(--border);
+            transition: transform 0.2s;
+        }
+
+        .task-list li:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+
+        .status-must { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger); }
+        .status-should { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning); }
+        .status-could { background: var(--success-bg); color: var(--success); border: 1px solid var(--success); }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: var(--bg);
+            font-weight: 600;
+        }
+        
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .highlight {
+            font-weight: 600;
+            color: var(--text);
+            font-size: 1.1rem;
+        }
+
+        .emoji {
+            font-size: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📦 LogiBook</h1>
+            <p class="subtitle">Ecosistema di Gestione e Prenotazione Slot</p>
+            <p style="margin-top: 1rem; font-style: italic; opacity: 0.8">"L'efficienza del magazzino comincia dal cancello d'ingresso"</p>
+        </header>
+
+        <div class="card">
+            <h2><span class="emoji">🎯</span> Obiettivi e Target</h2>
+            <p><strong>LogiBook</strong> è la nuova piattaforma enterprise progettata per ottimizzare la pianificazione e il transito dei mezzi nei depositi.</p>
+            <br>
+            <ul>
+                <li><strong>Obiettivo principale</strong>: Ridurre al minimo i tempi di attesa dei vettori ed eliminare le code ai cancelli tramite la digitalizzazione.</li>
+                <li><strong>Target di Utilizzo</strong>:
+                    <ul style="margin-top: 0.5rem;">
+                        <li>🚚 <strong>Vettori</strong>: Prenotano gli slot in autonomia caricando la documentazione di viaggio (DDT).</li>
+                        <li>🏢 <strong>Portineria (Gate)</strong>: Monitora live gli arrivi, registra ingressi/uscite e assegna le baie.</li>
+                        <li>👑 <strong>Amministratori</strong>: Gestiscono le utenze, verificano i KPI prestazionali e controllano i log di audit.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="emoji">🏗️</span> Architettura Cloud-Native</h2>
+            <p><em>Infrastruttura dati scalabile, resiliente e protetta</em></p>
+            
+            <div class="mermaid">
+graph TD
+    classDef actor fill:#e0f2fe,stroke:#0284c7,stroke-width:2px;
+    classDef database fill:#dcfce7,stroke:#15803d,stroke-width:2px;
+    classDef core fill:#faf5ff,stroke:#7e22ce,stroke-width:2px;
+
+    V[Vettore / Carrier] -->|1. Booking Slot & DDT| NextApp[Next.js App Router]
+    G[Portineria / Gate] -->|2. Check-in & Assegna Baia| NextApp
+    A[Amministratori / Admin] -->|3. Gestione Hub, KPI & Audit| NextApp
+
+    NextApp -->|Drizzle ORM| Postgres[(PostgreSQL Supabase Cloud)]
+    NextApp -.->|Offline Fallback| SQLite[(SQLite Database Locale)]
+
+    class V,G,A actor;
+    class Postgres,SQLite database;
+    class NextApp core;
+            </div>
+
+            <ul>
+                <li><strong>Database Cloud PostgreSQL</strong>: Ospitato su Supabase per garantire ridondanza, elevata frequenza di transazioni simultanee e backup automatici.</li>
+                <li><strong>Tracciabilità Integrata</strong>: Ogni modifica è soggetta ad audit log asincroni non bloccanti.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2><span class="emoji">🔄</span> Ciclo di Vita del Transito</h2>
+            <p><em>Flusso operativo end-to-end del mezzo di trasporto</em></p>
+            
+            <div class="mermaid">
+sequenceDiagram
+    autonumber
+    actor Vettore as Vettore (Autista)
+    actor Portineria as Portineria (Gate)
+    actor Admin as Admin (Manager)
+    
+    Note over Vettore, Admin: Fase 1: Abilitazione Account
+    Vettore->>Admin: Richiesta di Registrazione Azienda & P.IVA
+    Admin->>Vettore: Approvazione (Stato ACTIVE) & Invio Credenziali
+    
+    Note over Vettore, Portineria: Fase 2: Prenotazione Appuntamento
+    Vettore->>Portineria: Prenota Slot Orario (Carica DDT & Riferimento Ordine)
+    Vettore->>Vettore: Download Digital Pass con QR Code
+    
+    Note over Portineria, Vettore: Fase 3: Operazioni al Gate
+    Vettore->>Portineria: Presentazione QR Code all'arrivo
+    Portineria->>Portineria: Check DPI & Assegnazione Baia (Ingresso Registrato)
+    Note right of Portineria: Avvio Timer KPI (Yard Time in Deposito)
+    
+    Note over Portineria, Admin: Fase 4: Partenza Mezzo
+    Portineria->>Portineria: Registrazione Uscita a fine scarico/carico
+    Note right of Portineria: Stop Timer KPI & Archiviazione Dati Transito
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><span class="emoji">✅</span> Stato Avanzamento (Features Pronte)</h2>
+            <p><em>Cosa è stato già completato e integrato nella V1</em></p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Area Funzionale</th>
+                        <th>Stato</th>
+                        <th>Dettagli Sviluppo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="highlight">Sicurezza & Onboarding</td>
+                        <td><span style="font-size:1.5rem">🟢</span></td>
+                        <td>Gestione richieste d'accesso vettori (PENDING/ACTIVE), login a tre ruoli e cambio password obbligatorio al primo accesso.</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">Area Vettori (Booking)</td>
+                        <td><span style="font-size:1.5rem">🟢</span></td>
+                        <td>Calendario slot, vincolo ore 15:00 del giorno precedente, modulo emergenza SOS e gestione avanzata combinata "ENTRAMBI" con tab dedicati.</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">Digital Pass QR</td>
+                        <td><span style="font-size:1.5rem">🟢</span></td>
+                        <td>Download pass digitale con QR Code generato dinamicamente per velocizzare il check-in.</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">Admin Dashboard</td>
+                        <td><span style="font-size:1.5rem">🟢</span></td>
+                        <td>Multi-deposito rapido, heatmap saturazione mensile con "jump-to-day", statistiche volumi bancali in tempo reale ed export report in formato CSV.</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">Gate Live Monitor</td>
+                        <td><span style="font-size:1.5rem">🟢</span></td>
+                        <td>Lista ingressi del giorno, timer di permanenza del mezzo al gate e stampa fogli di marcia A4.</td>
+                    </tr>
+                    <tr>
+                        <td class="highlight">Registro Audit</td>
+                        <td><span style="font-size:1.5rem">🟢</span></td>
+                        <td>Logging asincrono e immutabile delle modifiche ai dati con visualizzazione old/new values.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2><span class="emoji">🚀</span> Roadmap Futura</h2>
+            
+            <h3 style="margin: 1.5rem 0 1rem 0; color: var(--danger)">🔴 Must Have (Rilascio Immediato)</h3>
+            <ul class="task-list">
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">Sostegno Multilingua (i18n) <span class="status-badge status-must" style="margin-left: 0.5rem">P0 - Priorità Assoluta</span></div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Traduzione del portale in Inglese, Polacco e Rumeno per autisti esteri.</div>
+                    </div>
+                </li>
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">Validazione Targhe/IVA</div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Controlli regex severi sugli input per evitare anomalie nei database.</div>
+                    </div>
+                </li>
+            </ul>
+
+            <h3 style="margin: 2rem 0 1rem 0; color: var(--warning)">🟡 Should Have (Alta Priorità)</h3>
+            <ul class="task-list">
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">Notifiche Email Automatiche</div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Invio automatico del pass e del QR Code via mail alla prenotazione.</div>
+                    </div>
+                </li>
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">SMS Driver Call</div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Invio automatico di un SMS all'autista per segnalare la baia libera all'ingresso.</div>
+                    </div>
+                </li>
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">Gestione Anagrafiche da UI</div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Pannello Admin per aggiungere/rimuovere Baie e Hub in autonomia.</div>
+                    </div>
+                </li>
+            </ul>
+
+            <h3 style="margin: 2rem 0 1rem 0; color: var(--success)">🟢 Could Have (Visione Futura - V2)</h3>
+            <ul class="task-list">
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">Yard Management Screen</div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Monitor piazzale esterno per la chiamata dei camion in attesa.</div>
+                    </div>
+                </li>
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">Webhook API WMS/ERP</div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Integrazione automatica con i sistemi gestionali del magazzino.</div>
+                    </div>
+                </li>
+            </ul>
+
+            <h3 style="margin: 2rem 0 1rem 0; color: var(--text-muted)">⚪ Won't Have (Fuori Scope Attuale)</h3>
+            <ul class="task-list">
+                <li>
+                    <span style="font-size: 1.5rem;">🔲</span>
+                    <div>
+                        <div class="highlight">Integrazione OCR Gate</div>
+                        <div style="color: var(--text-muted); font-size: 0.95rem; margin-top: 0.25rem">Telecamere di lettura targa all'ingresso per check-in automatico.</div>
+                    </div>
+                </li>
+            </ul>
+        </div>
+        
+        <div style="text-align: center; color: var(--text-muted); margin-top: 2rem; padding-top: 2rem; border-top: 1px solid var(--border);">
+            <p><strong>LogiBook</strong> © 2026</p>
+        </div>
+    </div>
+</body>
+</html>

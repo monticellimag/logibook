@@ -44,8 +44,8 @@ export default function BookingDashboard({ user }: { user: any }) {
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   useEffect(() => {
-    const lastDepot = localStorage.getItem('slotify_last_depot');
-    const savedView = localStorage.getItem('slotify_view_mode') as 'grid' | 'table';
+    const lastDepot = localStorage.getItem('logibook_last_depot');
+    const savedView = localStorage.getItem('logibook_view_mode') as 'grid' | 'table';
     
     if (lastDepot) setSelectedDepotId(lastDepot);
     if (savedView) setViewMode(savedView);
@@ -95,8 +95,8 @@ export default function BookingDashboard({ user }: { user: any }) {
     fetchBookings();
     fetchHeatmap();
     if (typeof window !== 'undefined') {
-       localStorage.setItem('slotify_view_mode', viewMode);
-       localStorage.setItem('slotify_last_depot', selectedDepotId);
+       localStorage.setItem('logibook_view_mode', viewMode);
+       localStorage.setItem('logibook_last_depot', selectedDepotId);
     }
   }, [formattedDate, selectedDepotId, viewMode]);
 

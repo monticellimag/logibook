@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import zlib from 'zlib';
 
-const DB_PATH = path.join(process.cwd(), 'data', 'slotify.db');
+const DB_PATH = path.join(process.cwd(), 'data', 'logibook.db');
 const BACKUP_DIR = path.join(process.cwd(), 'backups');
 const LOGS_DIR = path.join(process.cwd(), 'logs');
 

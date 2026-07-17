@@ -277,7 +277,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `slotify_export_${formattedDate}.csv`);
+    link.setAttribute("download", `logibook_export_${formattedDate}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

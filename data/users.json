@@ -1,7 +1,7 @@
 [
   {
     "id": "7a12470a-261d-4165-a3e2-de552e29c078",
-    "email": "admin@slotify.local",
+    "email": "admin@logibook.local",
     "password": "admin",
     "name": "Super Admin",
     "role": "admin",

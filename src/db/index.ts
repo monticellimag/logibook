@@ -12,7 +12,7 @@ if (!fs.existsSync(DATA_DIR)) {
 
 // Use a singleton db to avoid locking issues in dev
 const globalForDb = global as unknown as { sqlite: Database.Database };
-const sqlite = globalForDb.sqlite || new Database(path.join(DATA_DIR, 'slotify.db'));
+const sqlite = globalForDb.sqlite || new Database(path.join(DATA_DIR, 'logibook.db'));
 
 if (process.env.NODE_ENV !== 'production') globalForDb.sqlite = sqlite;
 

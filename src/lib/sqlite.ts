@@ -9,7 +9,7 @@ if (!fs.existsSync(DATA_DIR)) {
   fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
-const dbPath = path.join(DATA_DIR, 'slotify.db');
+const dbPath = path.join(DATA_DIR, 'logibook.db');
 const db = new Database(dbPath);
 
 db.pragma('journal_mode = WAL');

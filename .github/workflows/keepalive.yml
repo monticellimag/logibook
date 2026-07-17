@@ -1,0 +1,30 @@
+name: 🔔 Supabase Keepalive
+
+on:
+  schedule:
+    # Ogni 5 giorni alle 08:00 UTC (alle 10:00 ora italiana)
+    - cron: '0 8 */5 * *'
+  # Permette di avviarlo anche manualmente dalla dashboard GitHub Actions
+  workflow_dispatch:
+
+jobs:
+  ping-supabase:
+    name: Ping Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pg driver
+        run: npm install pg
+
+      - name: 🏓 Ping Supabase
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: node scripts/keepalive.js

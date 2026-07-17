@@ -3,7 +3,7 @@
 > **Ecosistema di Gestione e Prenotazione Slot**  
 > *L'efficienza del magazzino comincia dal cancello d'ingresso*
 
-**LogiBook** (in precedenza Slotify) è la nuova piattaforma enterprise progettata per ottimizzare la pianificazione e il transito dei mezzi nei depositi.
+**LogiBook** è la nuova piattaforma enterprise progettata per ottimizzare la pianificazione e il transito dei mezzi nei depositi.
 
 ## 🎯 Obiettivi e Target
 

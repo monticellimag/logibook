@@ -3,7 +3,7 @@ const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
 const path = require('path');
 
-const dbPath = path.join(__dirname, '../data/slotify.db');
+const dbPath = path.join(__dirname, '../data/logibook.db');
 const db = new Database(dbPath);
 
 const usersToRestore = [
