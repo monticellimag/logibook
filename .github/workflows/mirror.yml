@@ -1,0 +1,23 @@
+name: 🪞 Mirror to monticellimag
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  mirror:
+    name: Mirror repo to monticellimag/Logibook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Push mirror to monticellimag
+        run: |
+          git remote add mirror https://x-access-token:${{ secrets.MIRROR_TOKEN }}@github.com/monticellimag/Logibook.git
+          git push mirror main --force
