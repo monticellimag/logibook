@@ -1,11 +1,22 @@
 import { defineConfig } from 'drizzle-kit';
-import path from 'path';
+import * as dotenv from 'dotenv';
+import * as fs from 'fs';
+import * as path from 'path';
+
+// Load .env.local in development
+const envLocalPath = path.join(process.cwd(), '.env.local');
+if (fs.existsSync(envLocalPath)) {
+  const parsed = dotenv.parse(fs.readFileSync(envLocalPath));
+  for (const key in parsed) {
+    process.env[key] = parsed[key];
+  }
+}
 
 export default defineConfig({
   schema: './src/db/schema.ts',
   out: './drizzle',
-  dialect: 'sqlite',
+  dialect: 'postgresql',
   dbCredentials: {
-    url: path.join(process.cwd(), 'data', 'logibook.db'),
+    url: process.env.DATABASE_URL!,
   },
 });

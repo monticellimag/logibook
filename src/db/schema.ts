@@ -1,7 +1,7 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core';
+import { pgTable, text, integer, boolean, serial, timestamp } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
-export const users = sqliteTable('users', {
+export const users = pgTable('users', {
   id: text('id').primaryKey(),
   email: text('email').unique().notNull(),
   password: text('password').notNull(),
@@ -15,7 +15,7 @@ export const users = sqliteTable('users', {
   phone: text('phone'),
   contactPerson: text('contactPerson'),
   status: text('status').default('ACTIVE'), // 'ACTIVE', 'PENDING', 'REJECTED'
-  must_change_password: integer('must_change_password', { mode: 'boolean' }).default(false),
+  must_change_password: boolean('must_change_password').default(false),
   temp_password_at: text('temp_password_at'),
   requested_at: text('requested_at'),
   reviewed_at: text('reviewed_at'),
@@ -26,7 +26,7 @@ export const users = sqliteTable('users', {
   createdAt: text('createdAt').notNull(),
 });
 
-export const bookings = sqliteTable('bookings', {
+export const bookings = pgTable('bookings', {
   id: text('id').primaryKey(),
   userId: text('userId').references(() => users.id),
   depotId: text('depotId').notNull(),
@@ -49,7 +49,7 @@ export const bookings = sqliteTable('bookings', {
   operationTypeCarico: text('operationTypeCarico'),
   palletsCarico: integer('palletsCarico').default(0),
   difficulty: text('difficulty').default('standard'),
-  isEmergency: integer('isEmergency', { mode: 'boolean' }).default(false),
+  isEmergency: boolean('isEmergency').default(false),
   attachment: text('attachment'),
   arrivalPhoto: text('arrivalPhoto'),
   operationStartedAt: text('operationStartedAt'),
@@ -58,15 +58,15 @@ export const bookings = sqliteTable('bookings', {
   createdAt: text('createdAt').notNull(),
 });
 
-export const sessions = sqliteTable('sessions', {
+export const sessions = pgTable('sessions', {
   id: text('id').primaryKey(),
   userId: text('userId').references(() => users.id),
   createdAt: text('createdAt').notNull(),
 });
 
-export const audit_logs = sqliteTable('audit_logs', {
-  id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-  timestamp: text('timestamp').default(sql`CURRENT_TIMESTAMP`),
+export const audit_logs = pgTable('audit_logs', {
+  id: integer('id').primaryKey().generatedAlwaysAsIdentity(),
+  timestamp: timestamp('timestamp').default(sql`CURRENT_TIMESTAMP`),
   userId: text('userId'),
   userEmail: text('userEmail'),
   userRole: text('userRole'),
@@ -80,7 +80,7 @@ export const audit_logs = sqliteTable('audit_logs', {
   details: text('details'),
 });
 
-export const deposits = sqliteTable('deposits', {
+export const deposits = pgTable('deposits', {
   id: text('id').primaryKey(),
   name: text('name').notNull(),
   description: text('description'),
