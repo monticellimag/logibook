@@ -19,7 +19,8 @@ const DEV_CREDENTIALS: Record<LoginMode, { label: string; email: string; passwor
   ],
   gate: [
     { label: "Super Admin", email: "admin@logibook.local", password: "admin", badge: "Gate" },
-    { label: "Monticelli", email: "monticelli@logisticauno.it", password: "password", badge: "Gate" },
+    { label: "Gate Monticelli", email: "gate.monticelli@logisticauno.it", password: "password", badge: "Gate" },
+    { label: "Gate S.Giorgio", email: "gate.sangiorgiobi@logisticauno.it", password: "password", badge: "Gate" },
   ],
 };
 
