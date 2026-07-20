@@ -7,6 +7,22 @@ import { Truck, MapPin, UserSquare2, ArrowLeft, ShieldCheck, Globe, Zap, Clock, 
 
 type LoginMode = "vettore" | "admin" | "gate";
 
+const DEV_CREDENTIALS: Record<LoginMode, { label: string; email: string; password: string; badge?: string }[]> = {
+  vettore: [
+    { label: "LCT", email: "LCT@LCT.IT", password: "password", badge: "Vettore" },
+  ],
+  admin: [
+    { label: "Super Admin", email: "admin@logibook.local", password: "admin", badge: "Globale" },
+    { label: "Monticelli", email: "monticelli@logisticauno.it", password: "password", badge: "Hub" },
+    { label: "S. Giorgio", email: "sangiorgiobi@logisticauno.it", password: "password", badge: "Hub" },
+    { label: "Oppeano 1", email: "oppeano1@logisticauno.it", password: "password", badge: "Hub" },
+  ],
+  gate: [
+    { label: "Super Admin", email: "admin@logibook.local", password: "admin", badge: "Gate" },
+    { label: "Monticelli", email: "monticelli@logisticauno.it", password: "password", badge: "Gate" },
+  ],
+};
+
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -251,6 +267,32 @@ function LoginContent() {
           >
             {loading ? "ELABORAZIONE..." : (isRegister ? "INVIA RICHIESTA" : "ACCEDI")}
           </button>
+
+          {/* Dev Quick-Login Panel */}
+          {!isRegister && mode && (
+            <div className="mt-4 p-4 rounded-2xl border border-amber-500/20 bg-amber-500/5">
+              <p className="text-xs font-black text-amber-400/70 uppercase tracking-widest mb-3 flex items-center gap-2">
+                <span className="inline-block w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                🔧 Accessi Demo
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {DEV_CREDENTIALS[mode].map((cred) => (
+                  <button
+                    key={cred.email}
+                    type="button"
+                    onClick={() => setFormData(prev => ({ ...prev, email: cred.email, password: cred.password }))}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 hover:bg-amber-500/10 border border-white/10 hover:border-amber-500/30 transition-all group"
+                  >
+                    <span className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">{cred.label}</span>
+                    {cred.badge && (
+                      <span className="text-[10px] font-bold text-amber-400/60 bg-amber-500/10 px-1.5 py-0.5 rounded-md">{cred.badge}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[10px] text-slate-600 mt-2 font-medium">Clicca per precompilare le credenziali</p>
+            </div>
+          )}
         </form>
       )}
 
