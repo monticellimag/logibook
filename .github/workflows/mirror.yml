@@ -10,6 +10,8 @@ jobs:
   mirror:
     name: Mirror repo to monticellimag/Logibook
     runs-on: ubuntu-latest
+    # Gira SOLO sul repo sorgente, non sul mirror (evita loop)
+    if: github.repository == 'alebaia81/Logibook'
 
     steps:
       - name: Checkout full history
