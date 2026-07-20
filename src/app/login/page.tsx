@@ -418,7 +418,7 @@ function LoginContent() {
             <a href="https://www.logisticauno.com/wp-content/uploads/2024/08/MOD_PRI_02-Informativa-trattamento-Clienti-fornitori.pdf" target="_blank" rel="noopener noreferrer" className="hover:text-logistica-action transition-colors">Informativa Fornitori</a>
           </div>
           <div>
-            &copy; {new Date().getFullYear()} <a href="https://www.logisticauno.com/" target="_blank" rel="noopener noreferrer" className="hover:text-logistica-action font-bold transition-colors">Logistica Uno Europe S.r.l.</a> Tutti i diritti riservati.
+            &copy; {new Date().getFullYear()} <span className="hover:text-logistica-action font-bold transition-colors">Alessandro Baiamonte</span> Tutti i diritti riservati.
           </div>
         </div>
       </div>
