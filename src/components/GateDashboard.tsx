@@ -28,6 +28,7 @@ type Booking = {
   difficulty: string;
   isEmergency: number;
   bay?: string;
+  bayId?: string;
 };
 
 const GATE_STATUS_LABELS: Record<string, string> = {
@@ -51,6 +52,7 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   const [showScanner, setShowScanner] = useState(false);
   const [scannerId, setScannerId] = useState("");
   const [showArrivalModal, setShowArrivalModal] = useState<Booking | null>(null);
+  const [bays, setBays] = useState<any[]>([]);
 
   const formattedDate = format(currentDate, "yyyy-MM-dd");
   const currentDepot = DEPOTS.find(d => d.id === selectedDepotId);
@@ -60,15 +62,26 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   useEffect(() => {
     setMounted(true);
     fetchBookings();
+    fetchBays();
     
     // Auto-refresh every 30 seconds
     const interval = setInterval(() => {
       fetchBookings(true); // silent fetch
+      fetchBays();
       setNow(new Date()); // Update current time for timers
     }, 30000);
     
     return () => clearInterval(interval);
   }, [formattedDate, selectedDepotId]);
+
+  const fetchBays = async () => {
+    try {
+      const res = await fetch(`/api/admin/bays?depositId=${selectedDepotId}`);
+      if (res.ok) setBays(await res.json());
+    } catch (err) {
+      console.error("Error fetching bays:", err);
+    }
+  };
 
   const fetchBookings = async (silent = false) => {
     if (!silent) setLoading(true);
@@ -105,13 +118,17 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
       if (gateStatus === 'expected') {
         body.operationStartedAt = null;
         body.completedAt = null;
+        body.bayId = null;
       }
       const res = await fetch(`/api/bookings/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (res.ok) await fetchBookings();
+      if (res.ok) {
+        await fetchBookings();
+        await fetchBays();
+      }
     } catch (err) {
       console.error("Error updating status:", err);
     }
@@ -170,6 +187,14 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
     const diff = new Date(end).getTime() - new Date(start).getTime();
     return Math.round(diff / 60000);
   };
+
+  const formatDuration = (mins: number) => {
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    const remainingMins = mins % 60;
+    return remainingMins > 0 ? `${hrs}h ${remainingMins}m` : `${hrs}h`;
+  };
+
 
   const handlePrint = () => {
     window.print();
@@ -523,7 +548,7 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                               
                               return (
                                 <span className={`text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-tight ${colorClass}`}>
-                                  ⏱️ Durata: {mins} min
+                                  ⏱️ Durata: {formatDuration(mins)}
                                 </span>
                               );
                             })()}
@@ -541,6 +566,61 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
             })}
           </div>
         )}
+
+        {/* Live Bays Layout (Monitor Piazzale) */}
+        {mounted && (
+          <div className="mt-12 bg-white dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 backdrop-blur-xl no-print shadow-sm">
+            <h3 className="text-sm font-black text-slate-700 dark:text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
+              Piazzale: Stato Occupazione Baie in Tempo Reale
+            </h3>
+            {bays.length === 0 ? (
+              <p className="text-xs text-slate-500 dark:text-slate-400 font-bold">Nessuna baia configurata in questo deposito. Configurale dalla sezione Admin &rarr; Baie.</p>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                {bays.map((bay) => {
+                  let statusColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20";
+                  let statusText = "Libera";
+                  let dotColor = "bg-emerald-400";
+                  
+                  if (bay.status === 'maintenance') {
+                    statusColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+                    statusText = "Manutenzione";
+                    dotColor = "bg-amber-400";
+                  } else if (bay.isOccupied) {
+                    statusColor = "bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20";
+                    statusText = "Occupata";
+                    dotColor = "bg-rose-400";
+                  }
+
+                  const activeTruck = bay.isOccupied 
+                    ? bookings.find(b => b.bayId === bay.id && b.gateStatus === 'arrived') 
+                    : null;
+
+                  return (
+                    <div 
+                      key={bay.id} 
+                      className={`p-4 rounded-2xl border text-center transition-all ${statusColor}`}
+                      title={activeTruck ? `Camion: ${activeTruck.licensePlate} (${activeTruck.carrierName})` : statusText}
+                    >
+                      <span className="block font-mono font-black text-3xl mb-1">#{bay.bayNumber}</span>
+                      <span className="block text-[10px] font-bold truncate max-w-full mb-2">{bay.bayName}</span>
+                      <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider">
+                        <span className={`w-1.5 h-1.5 rounded-full ${dotColor} ${bay.isOccupied ? 'animate-ping' : ''}`}></span>
+                        {statusText}
+                      </span>
+                      {activeTruck && (
+                        <span className="block text-[10px] font-black bg-rose-500/10 text-rose-300 border border-rose-500/20 px-2 py-0.5 rounded-md mt-2 font-mono truncate">
+                          🚚 {activeTruck.licensePlate}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       {/* Profile Modal */}
@@ -552,15 +632,22 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   {showArrivalModal && (
     <ArrivalModal 
       booking={showArrivalModal} 
+      bays={bays}
       onClose={() => setShowArrivalModal(null)} 
-      onConfirm={async (id, bay) => {
+      onConfirm={async (id, bayId) => {
         try {
           const res = await fetch(`/api/bookings/${id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ gateStatus: 'arrived', bay }),
+            body: JSON.stringify({ gateStatus: 'arrived', bayId }),
           });
-          if (res.ok) await fetchBookings();
+          if (res.ok) {
+            await fetchBookings();
+            await fetchBays();
+          } else {
+            const errData = await res.json();
+            alert(errData.error || "Errore durante il check-in");
+          }
         } catch (err) {
           console.error("Error updating status:", err);
         }
@@ -653,8 +740,20 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   );
 }
 
-function ArrivalModal({ booking, onClose, onConfirm }: { booking: Booking, onClose: () => void, onConfirm: (id: string, bay: string) => void }) {
-  const [bay, setBay] = useState("");
+function ArrivalModal({ 
+  booking, 
+  bays, 
+  onClose, 
+  onConfirm 
+}: { 
+  booking: Booking, 
+  bays: any[], 
+  onClose: () => void, 
+  onConfirm: (id: string, bayId: string) => void 
+}) {
+  const [selectedBayId, setSelectedBayId] = useState("");
+
+  const activeBays = bays.filter(b => b.status === 'available');
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-300">
@@ -685,15 +784,29 @@ function ArrivalModal({ booking, onClose, onConfirm }: { booking: Booking, onClo
           </div>
 
           <div className="mb-8">
-             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2 text-center">ASSEGNAZIONE BAIA DI SCARICO/CARICO</p>
-             <input 
-               type="text" 
-               placeholder="Inserisci numero baia (es. 12)" 
-               value={bay}
-               onChange={(e) => setBay(e.target.value.toUpperCase())}
-               className="w-full text-center py-4 bg-slate-50 dark:bg-slate-800 border-2 border-amber-200 dark:border-amber-900/30 rounded-2xl text-2xl font-black text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-amber-500/20 transition-all placeholder:text-slate-300"
-               autoFocus
-             />
+             <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 text-center">ASSEGNAZIONE BAIA DI SCARICO/CARICO</p>
+             {activeBays.length === 0 ? (
+               <div className="text-center p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-2xl text-sm font-bold">
+                 Nessuna baia disponibile in questo deposito! Configurale dall'Admin Dashboard.
+               </div>
+             ) : (
+               <select
+                 value={selectedBayId}
+                 onChange={(e) => setSelectedBayId(e.target.value)}
+                 className="w-full text-center py-4 bg-slate-50 dark:bg-slate-800 border-2 border-amber-200 dark:border-amber-900/30 rounded-2xl text-xl font-black text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-amber-500/20 transition-all cursor-pointer"
+               >
+                 <option value="" disabled>-- Seleziona una Baia --</option>
+                 {activeBays.map((bay) => (
+                   <option 
+                     key={bay.id} 
+                     value={bay.id} 
+                     disabled={bay.isOccupied}
+                   >
+                     Baia #{bay.bayNumber} ({bay.bayName}) {bay.isOccupied ? " - [OCCUPATA]" : " - Libera"}
+                   </option>
+                 ))}
+               </select>
+             )}
           </div>
 
           <div className="flex flex-col gap-4">
@@ -708,8 +821,8 @@ function ArrivalModal({ booking, onClose, onConfirm }: { booking: Booking, onClo
              </div>
 
              <button 
-               onClick={() => onConfirm(booking.id, bay)}
-               disabled={!bay}
+               onClick={() => onConfirm(booking.id, selectedBayId)}
+               disabled={!selectedBayId}
                className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-lg font-black shadow-xl transition-all active:scale-95 hover:bg-slate-800 dark:hover:bg-slate-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
              >
                <CheckCircle2 className="w-6 h-6" /> CONFERMA INGRESSO GATE

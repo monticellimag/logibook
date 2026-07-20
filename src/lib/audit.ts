@@ -5,7 +5,7 @@ export interface AuditLogParams {
   userEmail?: string | null;
   userRole?: string | null;
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'ERROR';
-  entity: 'booking' | 'user' | 'slot' | 'deposit' | 'auth';
+  entity: 'booking' | 'user' | 'slot' | 'deposit' | 'auth' | 'bay';
   entityId?: string | null;
   oldValue?: any;
   newValue?: any;

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
-import { db, bookings } from '@/db';
+import { db, bookings, bays } from '@/db';
 import { eq } from 'drizzle-orm';
 import { logAudit } from '@/lib/audit';
 import { headers } from 'next/headers';
@@ -92,7 +92,29 @@ export async function PATCH(
     }
 
     if (updates.bay !== undefined) filteredUpdates.bay = updates.bay;
+    if (updates.bayId !== undefined) {
+      if (updates.bayId === null) {
+        filteredUpdates.bayId = null;
+        filteredUpdates.bay = null;
+      } else {
+        const { eq, and } = require('drizzle-orm');
+        
+        const bayResult = await db.select()
+          .from(bays)
+          .where(and(eq(bays.id, updates.bayId), eq(bays.depositId, booking.depotId)))
+          .limit(1);
+        
+        const selectedBay = bayResult[0];
+        if (!selectedBay) {
+          return NextResponse.json({ error: 'La baia selezionata non è valida o non appartiene a questo deposito.' }, { status: 400 });
+        }
+        
+        filteredUpdates.bayId = updates.bayId;
+        filteredUpdates.bay = selectedBay.bayName; // Per retrocompatibilità con la stringa "bay"
+      }
+    }
     if (updates.arrivalPhoto !== undefined) filteredUpdates.arrivalPhoto = updates.arrivalPhoto;
+
 
     if (Object.keys(filteredUpdates).length > 0) {
       await db.update(bookings)

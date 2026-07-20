@@ -38,8 +38,39 @@ const DEMO_USERS = [
   { email: 'LCT@LCT.IT',                    password: 'password', name: 'LCT',                      role: 'user',  depotId: null, status: 'ACTIVE' },
 ];
 
+const DEPOTS = [
+  { id: 'monticelli', name: "Monticelli d'Ongina" },
+  { id: 'sangiorgiobi', name: "San Giorgio Bigarello" },
+  { id: 'oppeano1', name: "OPPEANO 1" },
+  { id: 'oppeano2', name: "Oppeano 2" },
+  { id: 'prato', name: "Prato" },
+  { id: 'porcari', name: "Porcari" },
+  { id: 'caivano', name: "Caivano" },
+  { id: 'nola', name: "Nola" },
+  { id: 'maddaloni', name: "Maddaloni" },
+  { id: 'bari', name: "Bari" },
+  { id: 'molfetta', name: "Molfetta" },
+  { id: 'palermo', name: "Palermo" },
+];
+
 async function seed() {
-  console.log('🌱 Avvio seed utenti demo su Supabase...\n');
+  console.log('🌱 Avvio seed depositi e utenti demo su Supabase...\n');
+
+  // 1. Inserimento Depositi
+  console.log('Popolamento tabella deposits...');
+  for (const d of DEPOTS) {
+    try {
+      const res = await pool.query('SELECT id FROM deposits WHERE id = $1', [d.id]);
+      if (res.rows.length === 0) {
+        await pool.query('INSERT INTO deposits (id, name) VALUES ($1, $2)', [d.id, d.name]);
+        console.log(`  ✅ Inserito deposito: ${d.name} (${d.id})`);
+      } else {
+        await pool.query('UPDATE deposits SET name = $1 WHERE id = $2', [d.name, d.id]);
+      }
+    } catch (err) {
+      console.error(`  ❌ Errore deposito ${d.id}:`, err.message);
+    }
+  }
 
   let inserted = 0;
   let updated = 0;
@@ -64,11 +95,11 @@ async function seed() {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
           [crypto.randomUUID(), u.email, hash, u.name, u.role, u.depotId ?? null, u.status ?? 'ACTIVE', now]
         );
-        console.log(`  ✅ Inserito:   ${u.email} [${u.role}]`);
+        console.log(`  ✅ Inserito utente:   ${u.email} [${u.role}]`);
         inserted++;
       }
     } catch (err) {
-      console.error(`  ❌ Errore su ${u.email}:`, err.message);
+      console.error(`  ❌ Errore utente ${u.email}:`, err.message);
     }
   }
 
@@ -77,3 +108,4 @@ async function seed() {
 }
 
 seed();
+

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, Fragment } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
-import { Truck, ChevronLeft, ChevronRight, LogOut, Printer, Home, Download, Paperclip, Clock, User, MapPin, Users, Plus, Trash2, ShieldCheck, AlertCircle, Camera, Building2, Phone, UserCircle2, X, History, UserCheck, Pencil, Key } from "lucide-react";
+import { Truck, ChevronLeft, ChevronRight, LogOut, Printer, Home, Download, Paperclip, Clock, User, MapPin, Users, Plus, Trash2, ShieldCheck, AlertCircle, Camera, Building2, Phone, UserCircle2, X, History, UserCheck, Pencil, Key, Grid } from "lucide-react";
 import { DEPOTS } from "@/lib/constants";
 import UserProfile from "./UserProfile";
 
@@ -294,6 +294,13 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
     return Math.round(diff / 60000);
   };
 
+  const formatDuration = (mins: number) => {
+    if (mins < 60) return `${mins}m`;
+    const hrs = Math.floor(mins / 60);
+    const remainingMins = mins % 60;
+    return remainingMins > 0 ? `${hrs}h ${remainingMins}m` : `${hrs}h`;
+  };
+
   return (
     <>
       {/* Stili solo per stampa */}
@@ -386,8 +393,15 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
             >
               <History className="w-4 h-4" /> Audit
             </a>
+            <a 
+              href="/admin/bays"
+              className="flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800"
+            >
+              <Grid className="w-4 h-4 text-indigo-500" /> Baie
+            </a>
             
             <div className="flex-1"></div>
+
             
             <a 
               href="/admin/gate"
@@ -563,7 +577,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
                                       
                                       return (
                                         <span className={`text-[10px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter ${colorClass}`}>
-                                          ⏱️ {mins} min
+                                          ⏱️ {formatDuration(mins)}
                                         </span>
                                       );
                                     })()}

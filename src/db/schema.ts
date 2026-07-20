@@ -26,6 +26,21 @@ export const users = pgTable('users', {
   createdAt: text('createdAt').notNull(),
 });
 
+export const deposits = pgTable('deposits', {
+  id: text('id').primaryKey(),
+  name: text('name').notNull(),
+  description: text('description'),
+});
+
+export const bays = pgTable('bays', {
+  id: text('id').primaryKey(),
+  depositId: text('depositId').notNull().references(() => deposits.id),
+  bayNumber: integer('bayNumber').notNull(),
+  bayName: text('bayName').notNull(),
+  status: text('status').default('available'), // 'available' | 'maintenance'
+  createdAt: text('createdAt').notNull(),
+});
+
 export const bookings = pgTable('bookings', {
   id: text('id').primaryKey(),
   userId: text('userId').references(() => users.id),
@@ -55,6 +70,7 @@ export const bookings = pgTable('bookings', {
   operationStartedAt: text('operationStartedAt'),
   completedAt: text('completedAt'),
   bay: text('bay'),
+  bayId: text('bayId').references(() => bays.id),
   createdAt: text('createdAt').notNull(),
 });
 
@@ -80,8 +96,3 @@ export const audit_logs = pgTable('audit_logs', {
   details: text('details'),
 });
 
-export const deposits = pgTable('deposits', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  description: text('description'),
-});
