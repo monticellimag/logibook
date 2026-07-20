@@ -2,8 +2,8 @@ name: 🔔 Supabase Keepalive
 
 on:
   schedule:
-    # Ogni 5 giorni alle 08:00 UTC (alle 10:00 ora italiana)
-    - cron: '0 8 */5 * *'
+    # Ogni 3 giorni alle 08:00 UTC (alle 10:00 ora italiana) — Supabase pausa dopo 7gg inattività
+    - cron: '0 8 */3 * *'
   # Permette di avviarlo anche manualmente dalla dashboard GitHub Actions
   workflow_dispatch:
 
