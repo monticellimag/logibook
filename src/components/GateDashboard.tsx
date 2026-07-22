@@ -27,6 +27,7 @@ type Booking = {
   pallets: number;
   difficulty: string;
   isEmergency: number;
+  createdAt?: string;
   bay?: string;
   bayId?: string;
 };
@@ -158,6 +159,61 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
     }
   };
 
+  const handleEmergencyToggle = async (id: string, currentIsEmergency?: number) => {
+    try {
+      const newEmergency = currentIsEmergency === 1 ? 0 : 1;
+      const res = await fetch(`/api/bookings/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isEmergency: newEmergency }),
+      });
+      if (res.ok) await fetchBookings();
+    } catch (err) {
+      console.error("Error updating emergency:", err);
+    }
+  };
+
+  // Calculate single active booking per bay and queue lists
+  const activeInBay: Record<string, string> = {}; // bayId -> bookingId
+  const activePerBay: Record<string, Booking[]> = {};
+  
+  bookings.forEach((b) => {
+    if (b.bayId && ['arrived', 'loading', 'unloading'].includes(b.gateStatus)) {
+      if (!activePerBay[b.bayId]) activePerBay[b.bayId] = [];
+      activePerBay[b.bayId].push(b);
+    }
+  });
+
+  const queuedInBay: Record<string, Booking[]> = {};
+
+  Object.keys(activePerBay).forEach((bId) => {
+    const list = activePerBay[bId];
+    list.sort((a, b) => (a.operationStartedAt || a.time).localeCompare(b.operationStartedAt || b.time));
+    activeInBay[bId] = list[0].id; // The 1st started booking is the primary active one in gate
+    if (list.length > 1) {
+      if (!queuedInBay[bId]) queuedInBay[bId] = [];
+      queuedInBay[bId].push(...list.slice(1));
+    }
+  });
+
+  bookings.forEach((b) => {
+    if (b.bayId && (!b.gateStatus || b.gateStatus === 'expected')) {
+      if (!queuedInBay[b.bayId]) queuedInBay[b.bayId] = [];
+      queuedInBay[b.bayId].push(b);
+    }
+  });
+
+  Object.keys(queuedInBay).forEach((bId) => {
+    queuedInBay[bId].sort((a, b) => {
+      const pA = a.isEmergency === 1 ? 1 : 0;
+      const pB = b.isEmergency === 1 ? 1 : 0;
+      if (pA !== pB) return pB - pA; // High priority bookings jump to front of queue!
+      const timeA = a.operationStartedAt || a.createdAt || a.time;
+      const timeB = b.operationStartedAt || b.createdAt || b.time;
+      return timeA.localeCompare(timeB);
+    });
+  });
+
   // Filtriamo i booking
   const filteredBookings = bookings
     .filter((b) => {
@@ -239,6 +295,12 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                 <LayoutDashboard className="w-4 h-4" /> Admin
               </a>
             )}
+            <button 
+              onClick={() => window.open(`/monitor/${selectedDepotId}?fullscreen=true`, '_blank')}
+              className="flex items-center gap-1.5 text-sm font-bold text-sky-600 dark:text-sky-500 hover:text-sky-700 px-3 py-2 rounded-xl hover:bg-sky-50 dark:hover:bg-sky-900/20 transition-colors"
+            >
+              📺 Monitor Baie
+            </button>
             <button onClick={handleLogout} className="flex items-center gap-1.5 text-sm text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 px-3 py-2 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-900/30 transition-colors">
               <LogOut className="w-4 h-4" /> Esci
             </button>
@@ -326,10 +388,28 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredBookings.map((booking, index) => {
               const isEmergency = booking.isEmergency === 1;
-              const isExpected = !booking.gateStatus || booking.gateStatus === 'expected';
               const isCompleted = booking.gateStatus === 'completed';
-              const isInGate = ['arrived', 'loading', 'unloading'].includes(booking.gateStatus);
+              
+              // Only 1 booking per bay can be active in gate; any extras assigned to this bay are queued
+              const isInGate = ['arrived', 'loading', 'unloading'].includes(booking.gateStatus) && 
+                               (!booking.bayId || activeInBay[booking.bayId] === booking.id);
+
+              const isExpected = !isCompleted && !isInGate;
               const isFast = booking.pallets < 5 && booking.pallets > 0;
+
+              let queuePos = 0;
+              let totalInQueue = 0;
+              let isQueuedForBay = false;
+
+              if (booking.bayId && isExpected && queuedInBay[booking.bayId]) {
+                const list = queuedInBay[booking.bayId];
+                const idx = list.findIndex((b) => b.id === booking.id);
+                if (idx !== -1) {
+                  queuePos = idx + 1;
+                  totalInQueue = list.length;
+                  isQueuedForBay = true;
+                }
+              }
 
               let cardClasses = isEmergency 
                 ? "bg-rose-50/50 dark:bg-rose-950/20 border-rose-500 animate-pulse-subtle shadow-lg shadow-rose-200 dark:shadow-none ring-2 ring-rose-500"
@@ -363,27 +443,47 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
 
               return (
                 <div key={booking.id || `booking-${index}`} className={`rounded-3xl border shadow-sm flex flex-col overflow-hidden transition-all duration-300 ${cardClasses} ${isInGate ? 'ring-2 ring-indigo-500 ring-offset-2 dark:ring-offset-slate-950 scale-[1.02]' : ''}`}>
-                  <div className={`px-6 py-4 border-b flex items-center justify-between ${headerClasses}`}>
-                    <div className="flex items-center gap-2">
-                       {isEmergency ? <AlertCircle className="w-5 h-5 text-white animate-pulse" /> : <Clock className={`w-5 h-5 ${isFast ? 'text-slate-400' : booking.difficulty === 'standard' ? 'text-emerald-500' : booking.difficulty === 'difficult' ? 'text-amber-600' : 'text-rose-500'}`} />}
-                       <span className={`text-lg font-bold ${timeColor}`}>{booking.time} {isEmergency && "(URGENTE)"}</span>
-                       {booking.bay && (
-                         <span className="ml-3 px-3 py-0.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-[10px] font-black rounded-full shadow-sm animate-in zoom-in duration-300">
-                           BAIA {booking.bay}
-                         </span>
-                       )}
-                    </div>
-                      <div>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${booking.operationType === 'Scarico' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'}`}>
+                  <div className={`px-5 py-3 border-b flex flex-col gap-2 ${headerClasses}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 shrink-0">
+                        {isEmergency ? <AlertCircle className="w-5 h-5 text-white animate-pulse" /> : <Clock className={`w-5 h-5 ${isFast ? 'text-slate-400' : booking.difficulty === 'standard' ? 'text-emerald-500' : booking.difficulty === 'difficult' ? 'text-amber-600' : 'text-rose-500'}`} />}
+                        <span className={`text-lg font-bold ${timeColor}`}>{booking.time} {isEmergency && "(URGENTE)"}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className={`text-xs font-bold px-3 py-1 rounded-full whitespace-nowrap ${booking.operationType === 'Scarico' ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300'}`}>
                           {booking.operationType || 'Carico'}
                         </span>
-                          {booking.attachment && (
-                            <div className="ml-2 flex items-center" title="Allegato disponibile">
-                              <Paperclip className="w-3.5 h-3.5 text-indigo-500 animate-pulse drop-shadow-[0_0_5px_rgba(79,70,229,0.6)]" />
-                            </div>
-                          )}
+                        {booking.attachment && (
+                          <div className="p-1 bg-indigo-50 dark:bg-indigo-900/50 rounded-md" title="Allegato disponibile">
+                            <Paperclip className="w-3.5 h-3.5 text-indigo-600 dark:text-indigo-400" />
+                          </div>
+                        )}
                       </div>
                     </div>
+
+                    {/* Dedicated Bay & Queue Row */}
+                    <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-200/40 dark:border-slate-800/40">
+                      <div className="flex flex-wrap items-center gap-2">
+                        {booking.bay && (
+                          <span className="px-2.5 py-0.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 text-xs font-extrabold rounded-lg shadow-sm whitespace-nowrap">
+                            RAMPA {booking.bay.replace(/^baia\s*/i, '').toUpperCase()}
+                          </span>
+                        )}
+                        {isQueuedForBay && (
+                          <span className="px-2.5 py-0.5 bg-amber-500 text-white text-xs font-extrabold rounded-lg shadow-sm whitespace-nowrap animate-pulse">
+                            ⏳ {queuePos}/{totalInQueue} IN CODA
+                          </span>
+                        )}
+                      </div>
+
+                      {booking.isEmergency === 1 && (
+                        <span className="px-2.5 py-0.5 bg-rose-600 text-white text-xs font-black rounded-lg shadow-md shadow-rose-200 dark:shadow-none animate-pulse flex items-center gap-1 whitespace-nowrap">
+                          ⚡ PRIORITÀ ALTA
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="p-6 flex-1">
                     <div className="flex justify-between items-start mb-6 align-top">
@@ -442,7 +542,11 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                       <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 min-h-[60px]">
                         <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-tight mb-1">Riferimento / Bancali</p>
                         <p className="text-xs font-bold text-slate-800 dark:text-slate-200 break-words">
-                          {booking.orderRef} — <span className={booking.pallets < 5 ? 'text-indigo-600 font-black' : ''}>{booking.pallets} PLT</span>
+                          {booking.orderRef} — {booking.operationType?.toLowerCase().includes('sfuso') || booking.notes?.toLowerCase().includes('sfuso') ? (
+                            <span className="text-amber-600 dark:text-amber-400 font-black">{booking.pallets} Pezzi Sfusi</span>
+                          ) : (
+                            <span className={booking.pallets < 5 ? 'text-indigo-600 font-black' : ''}>{booking.pallets} PLT</span>
+                          )}
                         </p>
                       </div>
                       <div className="bg-slate-50/50 dark:bg-slate-800/50 rounded-xl p-3 border border-slate-100 dark:border-slate-700 min-h-[60px]">
@@ -504,11 +608,23 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
                     )}
 
                     {!isCompleted && (
-                      <div className="space-y-4 mt-auto">
+                      <div className="space-y-3 mt-auto">
+                        {isQueuedForBay && (
+                          <div className="p-3 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/50 rounded-2xl text-center">
+                            <p className="text-amber-800 dark:text-amber-300 font-black text-xs uppercase tracking-wider mb-0.5">
+                              ⏳ IN ATTESA DI POSIZIONAMENTO ({queuePos}/{totalInQueue})
+                            </p>
+                            <p className="text-[10px] font-bold text-amber-700/80 dark:text-amber-400/80">
+                              {queuePos === 1 
+                                ? "⚡ Prossimo in linea: entrerà in rampa in automatico appena la baia si libera!" 
+                                : `Posizione ${queuePos} di ${totalInQueue} in coda per la Baia ${booking.bay}`}
+                            </p>
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           {isExpected && (
                              <button onClick={() => setShowArrivalModal(booking)} className="flex-1 py-3.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl text-sm font-black shadow-lg shadow-amber-200 dark:shadow-none transition-all active:scale-95 flex items-center justify-center gap-2">
-                               <Truck className="w-4 h-4" /> REGISTRA ARRIVO
+                               <Truck className="w-4 h-4" /> {isQueuedForBay ? "CAMBIA BAIA / ASSEGNAZIONE" : "REGISTRA ARRIVO"}
                              </button>
                           )}
                           {isInGate && (
@@ -749,9 +865,10 @@ function ArrivalModal({
   booking: Booking, 
   bays: any[], 
   onClose: () => void, 
-  onConfirm: (id: string, bayId: string) => void 
+  onConfirm: (id: string, bayId: string, isEmergency?: number) => void 
 }) {
   const [selectedBayId, setSelectedBayId] = useState("");
+  const [isEmergency, setIsEmergency] = useState(booking.isEmergency === 1);
 
   const activeBays = bays.filter(b => b.status === 'available');
 
@@ -783,6 +900,36 @@ function ArrivalModal({
             </div>
           </div>
 
+          {/* Toggle Priorità Alta */}
+          <div 
+            onClick={() => setIsEmergency(!isEmergency)}
+            className={`mb-6 p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between ${
+              isEmergency 
+                ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-500 shadow-md shadow-rose-100 dark:shadow-none' 
+                : 'bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl text-white ${isEmergency ? 'bg-rose-600 animate-pulse' : 'bg-slate-400'}`}>
+                <AlertCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className={`text-xs font-black uppercase tracking-wider ${isEmergency ? 'text-rose-900 dark:text-rose-200' : 'text-slate-700 dark:text-slate-300'}`}>
+                  ⚡ ASSEGNA PRIORITÀ ALTA (URGENTE)
+                </p>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {isEmergency ? "Mezzo urgente: balzerà in prima posizione nella rampa" : "Attiva per posizionarlo prioritariamente in coda"}
+                </p>
+              </div>
+            </div>
+            <input 
+              type="checkbox" 
+              checked={isEmergency} 
+              onChange={(e) => setIsEmergency(e.target.checked)}
+              className="w-5 h-5 accent-rose-600 cursor-pointer"
+            />
+          </div>
+
           <div className="mb-8">
              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 text-center">ASSEGNAZIONE BAIA DI SCARICO/CARICO</p>
              {activeBays.length === 0 ? (
@@ -796,15 +943,29 @@ function ArrivalModal({
                  className="w-full text-center py-4 bg-slate-50 dark:bg-slate-800 border-2 border-amber-200 dark:border-amber-900/30 rounded-2xl text-xl font-black text-slate-900 dark:text-white outline-none focus:ring-4 focus:ring-amber-500/20 transition-all cursor-pointer"
                >
                  <option value="" disabled>-- Seleziona una Baia --</option>
-                 {activeBays.map((bay) => (
-                   <option 
-                     key={bay.id} 
-                     value={bay.id} 
-                     disabled={bay.isOccupied}
-                   >
-                     Baia #{bay.bayNumber} ({bay.bayName}) {bay.isOccupied ? " - [OCCUPATA]" : " - Libera"}
-                   </option>
-                 ))}
+                  {activeBays.map((bay) => {
+                    const queueCount = bay.queuedCount || 0;
+                    const isFullQueue = queueCount >= 5;
+                    let statusLabel = " - Libera";
+                    if (bay.isOccupied) {
+                      statusLabel = ` - OCCUPATA (${queueCount}/5 in coda)`;
+                    } else if (queueCount > 0) {
+                      statusLabel = ` - Libera (${queueCount}/5 in coda)`;
+                    }
+                    if (isFullQueue) {
+                      statusLabel = ` - CODA PIENA (5/5)`;
+                    }
+
+                    return (
+                      <option 
+                        key={bay.id} 
+                        value={bay.id} 
+                        disabled={isFullQueue}
+                      >
+                        Baia #{bay.bayNumber} ({bay.bayName}){statusLabel}
+                      </option>
+                    );
+                  })}
                </select>
              )}
           </div>
@@ -821,7 +982,7 @@ function ArrivalModal({
              </div>
 
              <button 
-               onClick={() => onConfirm(booking.id, selectedBayId)}
+               onClick={() => onConfirm(booking.id, selectedBayId, isEmergency ? 1 : 0)}
                disabled={!selectedBayId}
                className="w-full py-4 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl text-lg font-black shadow-xl transition-all active:scale-95 hover:bg-slate-800 dark:hover:bg-slate-100 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
              >

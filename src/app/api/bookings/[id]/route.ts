@@ -81,6 +81,9 @@ export async function PATCH(
     const filteredUpdates: any = {};
     if (updates.status !== undefined) filteredUpdates.status = updates.status;
     if (updates.difficulty !== undefined) filteredUpdates.difficulty = updates.difficulty;
+    if (updates.isEmergency !== undefined) {
+      filteredUpdates.isEmergency = Boolean(updates.isEmergency && updates.isEmergency !== 0 && updates.isEmergency !== '0' && updates.isEmergency !== 'false');
+    }
     
     if (updates.gateStatus !== undefined) {
       filteredUpdates.gateStatus = updates.gateStatus;
@@ -97,7 +100,7 @@ export async function PATCH(
         filteredUpdates.bayId = null;
         filteredUpdates.bay = null;
       } else {
-        const { eq, and } = require('drizzle-orm');
+        const { eq, and, inArray } = require('drizzle-orm');
         
         const bayResult = await db.select()
           .from(bays)
@@ -110,7 +113,60 @@ export async function PATCH(
         }
         
         filteredUpdates.bayId = updates.bayId;
-        filteredUpdates.bay = selectedBay.bayName; // Per retrocompatibilità con la stringa "bay"
+        filteredUpdates.bay = selectedBay.bayName;
+
+        // Check if there is already an active truck in this bay today
+        if (updates.gateStatus === 'arrived' || booking.gateStatus === 'expected') {
+          const activeInBay = await db.select()
+            .from(bookings)
+            .where(
+              and(
+                eq(bookings.depotId, booking.depotId),
+                eq(bookings.bayId, updates.bayId),
+                eq(bookings.date, booking.date),
+                inArray(bookings.gateStatus, ['arrived', 'loading', 'unloading'])
+              )
+            )
+            .limit(1);
+
+          // If bay is currently occupied by another vehicle, keep this booking as queued ('expected')
+          if (activeInBay.length > 0 && activeInBay[0].id !== id) {
+            filteredUpdates.gateStatus = 'expected';
+            delete filteredUpdates.operationStartedAt;
+          }
+        }
+      }
+    }
+
+    // Auto-promotion: when a booking completes, automatically promote the next queued vehicle for this bay (priority first!)
+    const isCompleting = (updates.gateStatus === 'completed') || (filteredUpdates.gateStatus === 'completed');
+    const targetBayId = filteredUpdates.bayId || booking.bayId;
+
+    if (isCompleting && targetBayId) {
+      const { and, eq, desc, asc } = require('drizzle-orm');
+      const nextInQueue = await db
+        .select()
+        .from(bookings)
+        .where(
+          and(
+            eq(bookings.depotId, booking.depotId),
+            eq(bookings.bayId, targetBayId),
+            eq(bookings.date, booking.date),
+            eq(bookings.gateStatus, 'expected')
+          )
+        )
+        .orderBy(desc(bookings.isEmergency), asc(bookings.operationStartedAt), asc(bookings.createdAt), asc(bookings.time))
+        .limit(1);
+
+      if (nextInQueue.length > 0) {
+        const nextBooking = nextInQueue[0];
+        await db
+          .update(bookings)
+          .set({
+            gateStatus: 'arrived',
+            operationStartedAt: new Date().toISOString(),
+          })
+          .where(eq(bookings.id, nextBooking.id));
       }
     }
     if (updates.arrivalPhoto !== undefined) filteredUpdates.arrivalPhoto = updates.arrivalPhoto;

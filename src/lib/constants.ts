@@ -18,6 +18,8 @@ export const OPERATION_TYPES = [
   "Carico completo",
   "Carico parziale",
   "Carico scondizionato",
+  "Scarico sfuso (non su pallet)",
+  "Carico sfuso (non su pallet)",
   "Resi",
   "Merce speciale",
   "Carico tubi",

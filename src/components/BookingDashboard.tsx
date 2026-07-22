@@ -58,6 +58,7 @@ export default function BookingDashboard({ user }: { user: any }) {
   const [notes, setNotes] = useState("");
   const [operationType, setOperationType] = useState(OPERATION_TYPES[0]);
   const [macroActivity, setMacroActivity] = useState<'Scarico' | 'Carico' | 'Entrambi'>('Scarico');
+  const [cargoType, setCargoType] = useState<'pallets' | 'sfuso'>('pallets');
   const [pallets, setPallets] = useState<number | string>(0);
   const [file, setFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<'Scarico' | 'Carico'>('Scarico');
@@ -192,9 +193,13 @@ export default function BookingDashboard({ user }: { user: any }) {
       formData.append('orderRef', finalOrderRef);
       formData.append('notes', notes);
       
-      const fullOperationType = macroActivity === 'Entrambi' 
+      let fullOperationType = macroActivity === 'Entrambi' 
         ? `Carico+Scarico: ${operationType}` 
         : `${macroActivity}: ${operationType}`;
+        
+      if (cargoType === 'sfuso' && !fullOperationType.toLowerCase().includes('sfuso')) {
+        fullOperationType += ' (Sfuso)';
+      }
         
       const totalPallets = macroActivity === 'Entrambi' 
         ? (Number(palletsScarico) || 0) + (Number(palletsCarico) || 0)
@@ -577,6 +582,35 @@ export default function BookingDashboard({ user }: { user: any }) {
               {error && <div className="p-4 bg-rose-500/10 text-rose-600 dark:text-rose-400 rounded-2xl border border-rose-200 dark:border-rose-900/30 text-sm font-bold">{error}</div>}
               
               <div className="space-y-8">
+                {/* Tipologia Merce / Imballo Selection */}
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Tipologia Merce / Imballo</label>
+                  <div className="flex p-1.5 bg-slate-100 dark:bg-slate-800 rounded-2xl gap-1">
+                    <button
+                      type="button"
+                      onClick={() => setCargoType('pallets')}
+                      className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                        cargoType === 'pallets' 
+                          ? 'bg-indigo-600 text-white shadow-md' 
+                          : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      📦 MERCE SU PALLET / BANCALI
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setCargoType('sfuso')}
+                      className={`flex-1 py-3 px-4 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                        cargoType === 'sfuso' 
+                          ? 'bg-amber-600 text-white shadow-md' 
+                          : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-700'
+                      }`}
+                    >
+                      🚛 SFUSO (ES. LAVATRICI / COLLI)
+                    </button>
+                  </div>
+                </div>
+
                 {/* Macro Activity Selection */}
                 <div className="space-y-3">
                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Direzione Attività</label>
@@ -675,10 +709,14 @@ export default function BookingDashboard({ user }: { user: any }) {
                     )}
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">Numero Bancali {macroActivity === 'Entrambi' ? activeTab.toUpperCase() : ''}</label>
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                      {cargoType === 'sfuso' 
+                        ? `Quantità Pezzi / Colli Sfusi ${macroActivity === 'Entrambi' ? activeTab.toUpperCase() : ''}` 
+                        : `Numero Bancali ${macroActivity === 'Entrambi' ? activeTab.toUpperCase() : ''}`}
+                    </label>
                     <input 
                       type="number" 
-                      min="0" 
+                      min="1" 
                       required 
                       value={macroActivity === 'Entrambi' ? (activeTab === 'Scarico' ? palletsScarico : palletsCarico) : pallets} 
                       onChange={(e) => {
@@ -692,6 +730,7 @@ export default function BookingDashboard({ user }: { user: any }) {
                       className={`w-full px-5 py-4 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 outline-none transition-all text-slate-900 dark:text-white font-bold ${
                         macroActivity === 'Entrambi' ? (activeTab === 'Scarico' ? 'focus:ring-amber-500' : 'focus:ring-blue-600') : 'focus:ring-indigo-500'
                       }`}
+                      placeholder={cargoType === 'sfuso' ? "Es. 180 (Pezzi / Colli Sfusi)" : "Es. 33 (Pallet)"}
                       disabled={isBooking} 
                     />
                   </div>

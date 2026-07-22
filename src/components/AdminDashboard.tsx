@@ -402,6 +402,12 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
             
             <div className="flex-1"></div>
 
+            <button 
+              onClick={() => window.open(`/monitor/${selectedDepotId}?fullscreen=true`, '_blank')}
+              className="flex items-center gap-2 text-sm font-bold px-4 py-2 rounded-lg transition-all whitespace-nowrap text-sky-600 dark:text-sky-500 hover:bg-sky-50 dark:hover:bg-sky-900/20"
+            >
+              📺 Baie di Carico
+            </button>
             
             <a 
               href="/admin/gate"

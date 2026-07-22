@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db, bays, bookings } from '@/db';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, inArray } from 'drizzle-orm';
 import { getSession } from '@/lib/auth';
 import { logAudit } from '@/lib/audit';
 import { headers } from 'next/headers';
@@ -33,16 +33,29 @@ export async function GET(request: Request) {
       .where(eq(bays.depositId, depositId))
       .orderBy(asc(bays.bayNumber));
 
-    // Calculate live status: check if there are bookings with gateStatus = 'arrived' for each bay
+    // Calculate live status: check if there are bookings with gateStatus in arrived/loading/unloading
     const activeBookings = await db.select({ bayId: bookings.bayId })
       .from(bookings)
-      .where(and(eq(bookings.depotId, depositId), eq(bookings.gateStatus, 'arrived')));
+      .where(and(eq(bookings.depotId, depositId), inArray(bookings.gateStatus, ['arrived', 'loading', 'unloading'])));
 
     const occupiedBayIds = new Set(activeBookings.map(b => b.bayId).filter(Boolean));
 
+    // Calculate queued count per bay
+    const queuedBookings = await db.select({ bayId: bookings.bayId })
+      .from(bookings)
+      .where(and(eq(bookings.depotId, depositId), eq(bookings.gateStatus, 'expected')));
+
+    const queueCounts: Record<string, number> = {};
+    queuedBookings.forEach(b => {
+      if (b.bayId) {
+        queueCounts[b.bayId] = (queueCounts[b.bayId] || 0) + 1;
+      }
+    });
+
     const resultWithStatus = result.map(b => ({
       ...b,
-      isOccupied: occupiedBayIds.has(b.id)
+      isOccupied: occupiedBayIds.has(b.id),
+      queuedCount: queueCounts[b.id] || 0,
     }));
 
     return NextResponse.json(resultWithStatus, { 
