@@ -8,14 +8,14 @@ const db = new Database(dbPath);
 
 const usersToRestore = [
   {
-    email: 'admin@logisticauno.it',
+    email: 'admin@azienda.it',
     password: 'admin123',
     role: 'admin',
     name: 'Super Admin',
     depotId: null
   },
   {
-    email: 'gate_monticelli@logisticauno.it',
+    email: 'gate_monticelli@azienda.it',
     password: 'password',
     role: 'gate',
     name: 'Hub Monticelli',

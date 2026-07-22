@@ -258,7 +258,7 @@ export default function BookingDashboard({ user }: { user: any }) {
              </div>
              <div>
                 <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-blue-500 tracking-tighter">LogiBook<span className="text-indigo-600">.</span></h1>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">Logistica Uno Ecosystem</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">L'Azienda Ecosystem</p>
              </div>
           </div>
           <div className="flex items-center gap-4">
@@ -314,7 +314,7 @@ export default function BookingDashboard({ user }: { user: any }) {
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Seleziona il deposito e uno slot libero per la tua prenotazione.</p>
             
             <div className="mt-6 max-w-xs">
-              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Deposito Logistica Uno</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Deposito L'Azienda</label>
               <select 
                 value={selectedDepotId} 
                 onChange={(e) => setSelectedDepotId(e.target.value)}

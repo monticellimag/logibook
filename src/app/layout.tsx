@@ -19,7 +19,7 @@ const robotoCondensed = Roboto_Condensed({
 });
 
 export const metadata: Metadata = {
-  title: "LogiBook | Logistica Uno",
+  title: "LogiBook | L'Azienda",
   description: "Piattaforma avanzata per la gestione intelligente dei transiti e prenotazioni slot.",
 };
 

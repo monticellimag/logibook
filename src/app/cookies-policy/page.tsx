@@ -6,7 +6,7 @@ export default function CookiesPolicy() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 py-20 px-4 sm:px-8">
       <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 rounded-[2rem] shadow-xl border border-slate-100">
-        <Link href="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-logistica-action mb-8 transition-colors group">
+        <Link href="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-brand-action mb-8 transition-colors group">
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> 
           Torna alla Home
         </Link>
@@ -36,7 +36,7 @@ export default function CookiesPolicy() {
 
           <p className="mt-12 text-sm text-slate-500">
             Ultimo aggiornamento: Aprile 2026<br/>
-            Logistica Uno Europe S.r.l.
+            L'Azienda Europe S.r.l.
           </p>
         </div>
       </div>

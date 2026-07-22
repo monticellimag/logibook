@@ -5,11 +5,11 @@
   --background: #f8fafc;
   --foreground: #0f172a;
   
-  /* Logistica Uno Corporate Palette */
-  --logistica-blue-deep: #224888;
-  --logistica-blue-action: #00A3E0;
-  --logistica-glass: rgba(255, 255, 255, 0.7);
-  --logistica-glass-dark: rgba(15, 23, 42, 0.7);
+  /* L'Azienda Corporate Palette */
+  --brand-blue-deep: #224888;
+  --brand-blue-action: #00A3E0;
+  --brand-glass: rgba(255, 255, 255, 0.7);
+  --brand-glass-dark: rgba(15, 23, 42, 0.7);
 }
 
 @theme inline {
@@ -20,15 +20,15 @@
   --font-roboto-condensed: var(--font-roboto-condensed);
   
   /* Custom Logistica Colors */
-  --color-logistica-deep: var(--logistica-blue-deep);
-  --color-logistica-action: var(--logistica-blue-action);
+  --color-brand-deep: var(--brand-blue-deep);
+  --color-brand-action: var(--brand-blue-action);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #020617;
     --foreground: #f8fafc;
-    --logistica-glass: rgba(15, 23, 42, 0.8);
+    --brand-glass: rgba(15, 23, 42, 0.8);
   }
 }
 
@@ -41,7 +41,7 @@ body {
 
 /* Glassmorphism Utilities */
 .glass-panel {
-  background: var(--logistica-glass);
+  background: var(--brand-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -54,7 +54,7 @@ body {
 
 .glass-card {
   /* Using standard CSS instead of @apply for custom classes to avoid build errors */
-  background: var(--logistica-glass);
+  background: var(--brand-glass);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -77,12 +77,12 @@ body {
 }
 
 /* Gradients */
-.logistica-gradient {
-  background: linear-gradient(135deg, var(--logistica-blue-deep) 0%, #1a3668 100%);
+.brand-gradient {
+  background: linear-gradient(135deg, var(--brand-blue-deep) 0%, #1a3668 100%);
 }
 
 .action-gradient {
-  background: linear-gradient(135deg, var(--logistica-blue-action) 0%, #0087ba 100%);
+  background: linear-gradient(135deg, var(--brand-blue-action) 0%, #0087ba 100%);
 }
 
 /* Animations */

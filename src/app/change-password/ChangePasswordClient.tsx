@@ -65,7 +65,7 @@ export default function ChangePasswordClient({ role, mustChange = true }: { role
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden selection:bg-logistica-action selection:text-white">
+    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 relative overflow-hidden selection:bg-brand-action selection:text-white">
       {/* Dynamic Background */}
       <div 
         className="fixed inset-0 z-0 bg-cover bg-center opacity-40 blur-sm"
@@ -110,7 +110,7 @@ export default function ChangePasswordClient({ role, mustChange = true }: { role
                   <div className="relative">
                     <input 
                       type={showPassword ? "text" : "password"} required
-                      className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl focus:ring-2 focus:ring-logistica-action outline-none text-white transition-all placeholder:text-slate-600 font-mono"
+                      className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl focus:ring-2 focus:ring-brand-action outline-none text-white transition-all placeholder:text-slate-600 font-mono"
                       placeholder="Inserisci password attuale"
                       value={currentPassword} onChange={e => setCurrentPassword(e.target.value)}
                     />
@@ -134,7 +134,7 @@ export default function ChangePasswordClient({ role, mustChange = true }: { role
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"} required
-                    className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl focus:ring-2 focus:ring-logistica-action outline-none text-white transition-all placeholder:text-slate-600 font-mono"
+                    className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl focus:ring-2 focus:ring-brand-action outline-none text-white transition-all placeholder:text-slate-600 font-mono"
                     placeholder="Crea nuova password"
                     value={newPassword} onChange={e => setNewPassword(e.target.value)}
                   />
@@ -171,7 +171,7 @@ export default function ChangePasswordClient({ role, mustChange = true }: { role
                 <div className="relative">
                   <input 
                     type={showPassword ? "text" : "password"} required
-                    className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl focus:ring-2 focus:ring-logistica-action outline-none text-white transition-all placeholder:text-slate-600 font-mono"
+                    className="w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl focus:ring-2 focus:ring-brand-action outline-none text-white transition-all placeholder:text-slate-600 font-mono"
                     placeholder="Ripeti la nuova password"
                     value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
                   />
@@ -187,7 +187,7 @@ export default function ChangePasswordClient({ role, mustChange = true }: { role
 
               <button
                 type="submit" disabled={loading}
-                className={`w-full py-5 rounded-2xl shadow-xl text-lg font-black text-white transition-all active:scale-[0.98] bg-logistica-action hover:opacity-90 mt-8
+                className={`w-full py-5 rounded-2xl shadow-xl text-lg font-black text-white transition-all active:scale-[0.98] bg-brand-action hover:opacity-90 mt-8
                   ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 {loading ? "AGGIORNAMENTO..." : "IMPOSTA PASSWORD E ACCEDI"}

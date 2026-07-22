@@ -9,7 +9,7 @@ const pool = new Pool({
 async function reset() {
   const hash = bcrypt.hashSync('admin123', 10);
   try {
-    const res = await pool.query('UPDATE users SET password = $1 WHERE email = $2', [hash, 'admin@logisticauno.it']);
+    const res = await pool.query('UPDATE users SET password = $1 WHERE email = $2', [hash, 'admin@azienda.it']);
     console.log('Password reset successfully to: admin123');
   } catch (err) {
     console.error('Error resetting password:', err);

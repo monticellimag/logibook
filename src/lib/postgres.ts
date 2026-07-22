@@ -99,7 +99,7 @@ export async function initDb() {
 
       await client.query(insertUserSql, [
         crypto.randomUUID(), 
-        'admin@logisticauno.it', 
+        'admin@azienda.it', 
         'admin', 
         'Super Admin', 
         'admin', 
@@ -110,7 +110,7 @@ export async function initDb() {
       for (const depot of DEPOTS) {
         await client.query(insertUserSql, [
           crypto.randomUUID(),
-          `${depot.id}@logisticauno.it`,
+          `${depot.id}@azienda.it`,
           'password',
           `Admin ${depot.name}`,
           'admin',

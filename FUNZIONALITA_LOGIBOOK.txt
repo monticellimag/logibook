@@ -1,4 +1,4 @@
-# LOGIBOOK - Ecosistema Logistica Uno
+# LOGIBOOK - Ecosistema Logistica
 # Elenco Completo Funzionalità e Caratteristiche
 
 Data ultimo aggiornamento: 2026-05-13
@@ -36,8 +36,7 @@ Data ultimo aggiornamento: 2026-05-13
 
 ## 4. CARATTERISTICHE TECNICHE E DESIGN
 *   **Interfaccia Enterprise Premium**: Design moderno basato su glassmorphism, navigazione a schede pulita, ottimizzato per l'esperienza utente con particolare attenzione alla prevenzione della "visual fatigue".
-*   **Brand Identity**: Titolo "LOGIBOOK." con font Roboto Condensed Black, perfettamente allineato al logo Logistica Uno.
-*   **Sicurezza e Accessi**: Protezione delle rotte basata su ruoli (Vettore/Admin/Hub), password salvate esclusivamente con hash crittografici (bcrypt) e blocco del sistema con obbligo di cambio password al primo accesso.
+*   **Brand Identity**: Titolo "LOGIBOOK." con font Roboto Condensed Black.
 *   **Responsive Design**: Accessibile da PC, Tablet e Smartphone per l'uso in mobilità.
 *   **Infrastruttura**: Database Cloud PostgreSQL gestito tramite Supabase per scalabilità, accesso remoto e performance elevate.
 *   **Affidabilità e Backup**: Backup enterprise automatici gestiti dalla piattaforma Supabase, garantendo la ridondanza dei dati e la possibilità di point-in-time recovery.

@@ -17,22 +17,22 @@ const pool = new Pool({
 const DEMO_USERS = [
   // ── ADMIN ──────────────────────────────────────────────
   { email: 'admin@logibook.local',           password: 'admin',    name: 'Super Admin',              role: 'admin', depotId: null },
-  { email: 'monticelli@logisticauno.it',     password: 'password', name: 'Admin Monticelli',         role: 'admin', depotId: 'monticelli' },
-  { email: 'sangiorgiobi@logisticauno.it',   password: 'password', name: 'Admin San Giorgio',        role: 'admin', depotId: 'sangiorgiobi' },
-  { email: 'oppeano1@logisticauno.it',       password: 'password', name: 'Admin Oppeano 1',          role: 'admin', depotId: 'oppeano1' },
-  { email: 'oppeano2@logisticauno.it',       password: 'password', name: 'Admin Oppeano 2',          role: 'admin', depotId: 'oppeano2' },
-  { email: 'prato@logisticauno.it',          password: 'password', name: 'Admin Prato',              role: 'admin', depotId: 'prato' },
-  { email: 'porcari@logisticauno.it',        password: 'password', name: 'Admin Porcari',            role: 'admin', depotId: 'porcari' },
-  { email: 'caivano@logisticauno.it',        password: 'password', name: 'Admin Caivano',            role: 'admin', depotId: 'caivano' },
-  { email: 'nola@logisticauno.it',           password: 'password', name: 'Admin Nola',               role: 'admin', depotId: 'nola' },
-  { email: 'maddaloni@logisticauno.it',      password: 'password', name: 'Admin Maddaloni',          role: 'admin', depotId: 'maddaloni' },
-  { email: 'bari@logisticauno.it',           password: 'password', name: 'Admin Bari',               role: 'admin', depotId: 'bari' },
-  { email: 'molfetta@logisticauno.it',       password: 'password', name: 'Admin Molfetta',           role: 'admin', depotId: 'molfetta' },
-  { email: 'palermo@logisticauno.it',        password: 'password', name: 'Admin Palermo',            role: 'admin', depotId: 'palermo' },
+  { email: 'monticelli@azienda.it',     password: 'password', name: 'Admin Monticelli',         role: 'admin', depotId: 'monticelli' },
+  { email: 'sangiorgiobi@azienda.it',   password: 'password', name: 'Admin San Giorgio',        role: 'admin', depotId: 'sangiorgiobi' },
+  { email: 'oppeano1@azienda.it',       password: 'password', name: 'Admin Oppeano 1',          role: 'admin', depotId: 'oppeano1' },
+  { email: 'oppeano2@azienda.it',       password: 'password', name: 'Admin Oppeano 2',          role: 'admin', depotId: 'oppeano2' },
+  { email: 'prato@azienda.it',          password: 'password', name: 'Admin Prato',              role: 'admin', depotId: 'prato' },
+  { email: 'porcari@azienda.it',        password: 'password', name: 'Admin Porcari',            role: 'admin', depotId: 'porcari' },
+  { email: 'caivano@azienda.it',        password: 'password', name: 'Admin Caivano',            role: 'admin', depotId: 'caivano' },
+  { email: 'nola@azienda.it',           password: 'password', name: 'Admin Nola',               role: 'admin', depotId: 'nola' },
+  { email: 'maddaloni@azienda.it',      password: 'password', name: 'Admin Maddaloni',          role: 'admin', depotId: 'maddaloni' },
+  { email: 'bari@azienda.it',           password: 'password', name: 'Admin Bari',               role: 'admin', depotId: 'bari' },
+  { email: 'molfetta@azienda.it',       password: 'password', name: 'Admin Molfetta',           role: 'admin', depotId: 'molfetta' },
+  { email: 'palermo@azienda.it',        password: 'password', name: 'Admin Palermo',            role: 'admin', depotId: 'palermo' },
 
   // ── GATE ───────────────────────────────────────────────
-  { email: 'gate.monticelli@logisticauno.it', password: 'password', name: 'Gate Monticelli',         role: 'gate',  depotId: 'monticelli' },
-  { email: 'gate.sangiorgiobi@logisticauno.it', password: 'password', name: 'Gate San Giorgio',      role: 'gate',  depotId: 'sangiorgiobi' },
+  { email: 'gate.monticelli@azienda.it', password: 'password', name: 'Gate Monticelli',         role: 'gate',  depotId: 'monticelli' },
+  { email: 'gate.sangiorgiobi@azienda.it', password: 'password', name: 'Gate San Giorgio',      role: 'gate',  depotId: 'sangiorgiobi' },
 
   // ── VETTORI ────────────────────────────────────────────
   { email: 'LCT@LCT.IT',                    password: 'password', name: 'LCT',                      role: 'user',  depotId: null, status: 'ACTIVE' },

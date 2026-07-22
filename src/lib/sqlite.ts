@@ -121,12 +121,12 @@ export function initDb() {
     `);
 
     db.transaction(() => {
-      insertUser.run(crypto.randomUUID(), 'admin@logisticauno.it', 'admin', 'Super Admin', 'admin', null, new Date().toISOString());
+      insertUser.run(crypto.randomUUID(), 'admin@azienda.it', 'admin', 'Super Admin', 'admin', null, new Date().toISOString());
       
       DEPOTS.forEach(depot => {
         insertUser.run(
           crypto.randomUUID(),
-          `${depot.id}@logisticauno.it`,
+          `${depot.id}@azienda.it`,
           'password',
           `Admin ${depot.name}`,
           'admin',

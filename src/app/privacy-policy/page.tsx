@@ -6,7 +6,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-800 py-20 px-4 sm:px-8">
       <div className="max-w-4xl mx-auto bg-white p-8 sm:p-12 rounded-[2rem] shadow-xl border border-slate-100">
-        <Link href="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-logistica-action mb-8 transition-colors group">
+        <Link href="/" className="inline-flex items-center text-sm font-semibold text-slate-500 hover:text-brand-action mb-8 transition-colors group">
           <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> 
           Torna alla Home
         </Link>
@@ -14,12 +14,12 @@ export default function PrivacyPolicy() {
         
         <div className="prose prose-slate max-w-none text-slate-600 space-y-6">
           <p>
-            Benvenuto sulla piattaforma LogiBook gestita da Logistica Uno Europe S.r.l. La tutela della tua privacy è di fondamentale importanza per noi.
+            Benvenuto sulla piattaforma LogiBook gestita da L'Azienda Europe S.r.l. La tutela della tua privacy è di fondamentale importanza per noi.
           </p>
           
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">1. Titolare del Trattamento</h2>
           <p>
-            Il Titolare del trattamento dei dati raccolti tramite questa piattaforma è Logistica Uno Europe S.r.l., con sede legale e operativa in Italia.
+            Il Titolare del trattamento dei dati raccolti tramite questa piattaforma è L'Azienda Europe S.r.l., con sede legale e operativa in Italia.
           </p>
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">2. Tipologia dei Dati Raccolti</h2>
@@ -50,7 +50,7 @@ export default function PrivacyPolicy() {
 
           <p className="mt-12 text-sm text-slate-500">
             Ultimo aggiornamento: Aprile 2026<br/>
-            Logistica Uno Europe S.r.l.
+            L'Azienda Europe S.r.l.
           </p>
         </div>
       </div>
