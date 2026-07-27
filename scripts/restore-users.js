@@ -16,7 +16,7 @@ const usersToRestore = [
     depotId: null
   },
   {
-    email: 'gate_monticelli@azienda.it',
+    email: 'gate.monticelli@azienda.it',
     password: 'password',
     role: 'gate',
     name: 'Hub Monticelli',
