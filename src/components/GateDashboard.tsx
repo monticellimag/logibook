@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { format } from "date-fns";
 import { it } from "date-fns/locale";
-import { Truck, LogOut, Home, Clock, Search, MapPin, CheckCircle2, User, Building2, LayoutDashboard, ChevronLeft, ChevronRight, Calendar as CalendarIcon, Paperclip, Phone, UserCircle2, AlertCircle, Camera, ClipboardList, X, Printer } from "lucide-react";
-import { DEPOTS, OPERATION_TYPES, DIFFICULTY_LEVELS } from "@/lib/constants";
+import { Truck, LogOut, Clock, Search, MapPin, CheckCircle2, User, Building2, LayoutDashboard, ChevronLeft, ChevronRight, Paperclip, Phone, AlertCircle, ClipboardList, X, Printer } from "lucide-react";
+import { DEPOTS, DIFFICULTY_LEVELS } from "@/lib/constants";
 import UserProfile from "./UserProfile";
 
 type Booking = {
@@ -40,7 +40,7 @@ const GATE_STATUS_LABELS: Record<string, string> = {
   completed: "Completato",
 };
 
-export default function GateDashboard({ adminUser }: { adminUser: any }) {
+export default function GateDashboard({ adminUser }: { adminUser: Record<string, unknown> & { depotId?: string } }) {
   const [mounted, setMounted] = useState(false);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDepotId, setSelectedDepotId] = useState(adminUser.depotId || DEPOTS[0].id);
@@ -53,7 +53,7 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   const [showScanner, setShowScanner] = useState(false);
   const [scannerId, setScannerId] = useState("");
   const [showArrivalModal, setShowArrivalModal] = useState<Booking | null>(null);
-  const [bays, setBays] = useState<any[]>([]);
+  const [bays, setBays] = useState<Record<string, unknown>[]>([]);
 
   const formattedDate = format(currentDate, "yyyy-MM-dd");
   const currentDepot = DEPOTS.find(d => d.id === selectedDepotId);
@@ -73,18 +73,18 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
     }, 30000);
     
     return () => clearInterval(interval);
-  }, [formattedDate, selectedDepotId]);
+  }, [formattedDate, selectedDepotId, fetchBookings, fetchBays]);
 
-  const fetchBays = async () => {
+  const fetchBays = useCallback(async () => {
     try {
       const res = await fetch(`/api/admin/bays?depositId=${selectedDepotId}`);
       if (res.ok) setBays(await res.json());
     } catch (err) {
       console.error("Error fetching bays:", err);
     }
-  };
+  }, [selectedDepotId]);
 
-  const fetchBookings = async (silent = false) => {
+  const fetchBookings = useCallback(async (silent = false) => {
     if (!silent) setLoading(true);
     try {
       const res = await fetch(`/api/bookings?date=${formattedDate}&depotId=${selectedDepotId}`);
@@ -94,7 +94,7 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formattedDate, selectedDepotId]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -115,7 +115,7 @@ export default function GateDashboard({ adminUser }: { adminUser: any }) {
   
   const handleStatusChange = async (id: string, gateStatus: string) => {
     try {
-      const body: any = { gateStatus };
+      const body: Record<string, unknown> = { gateStatus };
       if (gateStatus === 'expected') {
         body.operationStartedAt = null;
         body.completedAt = null;
@@ -863,7 +863,7 @@ function ArrivalModal({
   onConfirm 
 }: { 
   booking: Booking, 
-  bays: any[], 
+  bays: Record<string, unknown>[], 
   onClose: () => void, 
   onConfirm: (id: string, bayId: string, isEmergency?: number) => void 
 }) {
@@ -934,7 +934,7 @@ function ArrivalModal({
              <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-3 text-center">ASSEGNAZIONE BAIA DI SCARICO/CARICO</p>
              {activeBays.length === 0 ? (
                <div className="text-center p-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-2xl text-sm font-bold">
-                 Nessuna baia disponibile in questo deposito! Configurale dall'Admin Dashboard.
+                 Nessuna baia disponibile in questo deposito! Configurale dall&apos;Admin Dashboard.
                </div>
              ) : (
                <select
@@ -977,7 +977,7 @@ function ArrivalModal({
                 </div>
                 <div>
                   <p className="text-sm font-bold text-amber-900 dark:text-amber-400">Verifica documenti e DPI</p>
-                  <p className="text-xs text-amber-800/70 dark:text-amber-500/70 italic">Assicurarsi che l'autista indossi scarpe antinfortunistiche e gilet ad alta visibilità prima di procedere al gate.</p>
+                  <p className="text-xs text-amber-800/70 dark:text-amber-500/70 italic">Assicurarsi che l&apos;autista indossi scarpe antinfortunistiche e gilet ad alta visibilità prima di procedere al gate.</p>
                 </div>
              </div>
 

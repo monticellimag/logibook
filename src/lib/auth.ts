@@ -10,7 +10,7 @@ export async function getSession(options?: { bypassRedirect?: boolean }) {
 
   if (!sessionId) return null;
 
-  let user: any = null;
+  let user: Record<string, unknown> | null = null;
   let mustChangePassword = false;
 
   try {
@@ -26,7 +26,7 @@ export async function getSession(options?: { bypassRedirect?: boolean }) {
     if (dbUser.status && dbUser.status !== 'ACTIVE') return null;
 
     mustChangePassword = dbUser.must_change_password === true;
-    const { password, ...safeUser } = dbUser;
+    const { password: _password, ...safeUser } = dbUser;
     user = safeUser;
   } catch (err) {
     console.error('Auth error:', err);

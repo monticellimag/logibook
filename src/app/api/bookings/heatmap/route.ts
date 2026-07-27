@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const start = format(startOfMonth(targetDate), "yyyy-MM-dd");
     const end = format(endOfMonth(targetDate), "yyyy-MM-dd");
 
-    let conditions = [between(bookings.date, start, end)];
+    const conditions = [between(bookings.date, start, end)];
     
     if (depotId) {
       conditions.push(eq(bookings.depotId, depotId));

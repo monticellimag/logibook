@@ -21,10 +21,10 @@ export async function GET(request: Request) {
   const date = searchParams.get('date'); // Formato YYYY-MM-DD
   const entity = searchParams.get('entity');
 
-  let conditions = [];
+  const conditions = [];
 
   if (action) {
-    conditions.push(eq(audit_logs.action, action as any));
+    conditions.push(eq(audit_logs.action, action as "CREATE" | "UPDATE" | "DELETE" | "LOGIN" | "LOGOUT" | "ERROR"));
   }
 
   if (userId) {
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
   }
 
   if (entity) {
-    conditions.push(eq(audit_logs.entity, entity as any));
+    conditions.push(eq(audit_logs.entity, entity as "booking" | "user" | "slot" | "deposit" | "auth" | "bay"));
   }
 
   if (date) {

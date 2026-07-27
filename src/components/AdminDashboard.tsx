@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { it } from "date-fns/locale";
-import { Truck, ChevronLeft, ChevronRight, LogOut, Printer, Home, Download, Paperclip, Clock, User, MapPin, Users, Plus, Trash2, ShieldCheck, AlertCircle, Camera, Building2, Phone, UserCircle2, X, History, UserCheck, Pencil, Key, Grid } from "lucide-react";
+import { Truck, ChevronLeft, ChevronRight, LogOut, Printer, Home, Download, Paperclip, Clock, MapPin, Users, Plus, Trash2, ShieldCheck, AlertCircle, UserCircle2, X, History, UserCheck, Pencil, Key, Grid } from "lucide-react";
 import { DEPOTS } from "@/lib/constants";
 import UserProfile from "./UserProfile";
 
@@ -42,7 +42,7 @@ type Analytics = {
   opDistrib?: { carico: number, scarico: number, entrambi: number };
 };
 
-export default function AdminDashboard({ adminUser }: { adminUser: any }) {
+export default function AdminDashboard({ adminUser }: { adminUser: Record<string, unknown> & { depotId?: string } }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDepotId, setSelectedDepotId] = useState(adminUser.depotId || DEPOTS[0].id);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -50,17 +50,17 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
   const [view, setView] = useState<'agenda' | 'users' | 'stats'>('agenda');
   const [metrics, setMetrics] = useState<Analytics | null>(null);
   const [heatmapData, setHeatmapData] = useState<Record<string, number>>({});
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<Record<string, unknown>[]>([]);
   const [newUser, setNewUser] = useState({ name: '', email: '', password: '', role: 'user', depotId: '' });
   const [createUserLoading, setCreateUserLoading] = useState(false);
   const [deleteUserLoading, setDeleteUserLoading] = useState(false);
   const [updateUserLoading, setUpdateUserLoading] = useState(false);
   const [selectedUserIdProfile, setSelectedUserIdProfile] = useState<string | null>(null);
   const [showProfile, setShowProfile] = useState(false);
-  const [editingUser, setEditingUser] = useState<any>(null);
+  const [editingUser, setEditingUser] = useState<Record<string, unknown> | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState(format(new Date(), "yyyy-MM"));
-  const printRef = useRef<HTMLDivElement>(null);
+
 
   const formattedDate = format(currentDate, "yyyy-MM-dd");
   const currentDepot = DEPOTS.find(d => d.id === selectedDepotId);
@@ -76,9 +76,9 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
       fetchMetrics();
       fetchHeatmap();
     }
-  }, [formattedDate, selectedDepotId, view, selectedMonth]);
+  }, [formattedDate, selectedDepotId, view, selectedMonth, fetchBookings, fetchUsers, fetchMetrics, fetchHeatmap]);
 
-  const fetchMetrics = async () => {
+  const fetchMetrics = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/analytics?depotId=${selectedDepotId}`);
@@ -88,18 +88,18 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedDepotId]);
 
-  const fetchHeatmap = async () => {
+  const fetchHeatmap = useCallback(async () => {
     try {
       const res = await fetch(`/api/bookings/heatmap?month=${selectedMonth}&depotId=${selectedDepotId}`);
       if (res.ok) setHeatmapData(await res.json());
     } catch (err) {
       console.error("Error fetching heatmap:", err);
     }
-  };
+  }, [selectedMonth, selectedDepotId]);
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch('/api/users');
@@ -109,9 +109,9 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(`/api/bookings?date=${formattedDate}&depotId=${selectedDepotId}`);
@@ -121,7 +121,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formattedDate, selectedDepotId]);
 
   const handleLogout = async () => {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -154,7 +154,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       alert("Si è verificato un errore durante il download del report CSV.");
     }
   };
@@ -187,8 +187,8 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
       alert("Utente creato con successo!");
       setNewUser({ name: '', email: '', password: '', role: 'user', depotId: '' });
       fetchUsers();
-    } catch (err: any) {
-      alert(err.message);
+    } catch (err) {
+      alert(err instanceof Error ? err.message : String(err));
     } finally {
       setCreateUserLoading(false);
     }
@@ -204,7 +204,7 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
         body: JSON.stringify({ id })
       });
       
-      let data: any = {};
+      let data: Record<string, unknown> = {};
       const contentType = res.headers.get("content-type");
       if (contentType && contentType.includes("application/json")) {
         data = await res.json();
@@ -216,9 +216,9 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
       }
       
       fetchUsers();
-    } catch (err: any) {
+    } catch (err) {
       console.error("User action error:", err);
-      alert("Errore: " + err.message);
+      alert("Errore: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setDeleteUserLoading(false);
     }
@@ -241,8 +241,8 @@ export default function AdminDashboard({ adminUser }: { adminUser: any }) {
       setShowEditModal(false);
       setEditingUser(null);
       fetchUsers();
-    } catch (err: any) {
-      alert("Errore: " + err.message);
+    } catch (err) {
+      alert("Errore: " + (err instanceof Error ? err.message : String(err)));
     } finally {
       setUpdateUserLoading(false);
     }

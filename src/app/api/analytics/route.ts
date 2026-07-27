@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db, bookings } from '@/db';
-import { eq, and, sql, gte, asc } from 'drizzle-orm';
+import { eq, and, sql, asc } from 'drizzle-orm';
 import { differenceInMinutes, parseISO } from 'date-fns';
 
 export async function GET(request: Request) {
@@ -8,7 +8,7 @@ export async function GET(request: Request) {
   const depotId = searchParams.get('depotId');
 
   try {
-    let conditions = [eq(bookings.status, 'completed')];
+    const conditions = [eq(bookings.status, 'completed')];
     if (depotId) {
       conditions.push(eq(bookings.depotId, depotId));
     }
@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     const peakHour = Object.entries(hourCounts).sort((a,b) => b[1] - a[1])[0]?.[0] || "-";
 
     // Usiamo sintassi SQLite per l'intervallo temporale
-    let volumeConditions = [
+    const volumeConditions = [
       sql`date(date) >= date('now', '-7 days')`
     ];
     if (depotId) {

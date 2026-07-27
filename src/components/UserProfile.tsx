@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { User, Building2, MapPin, Phone, UserRound, Mail, X, Save, ShieldCheck, Key } from "lucide-react";
 
 type ProfileData = {
@@ -29,11 +29,7 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    fetchProfile();
-  }, [userId]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     setLoading(true);
     try {
       const url = userId ? `/api/users/${userId}` : '/api/profile';
@@ -42,12 +38,16 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
       const data = await res.json();
       setProfile(data);
       setFormData(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
-  };
+  }, [userId]);
+
+  useEffect(() => {
+    fetchProfile();
+  }, [fetchProfile]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,8 +66,8 @@ export default function UserProfile({ userId, readOnly = false, onClose }: UserP
       if (!res.ok) throw new Error("Errore durante il salvataggio");
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setSaving(false);
     }

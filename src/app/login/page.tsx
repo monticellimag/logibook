@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { Truck, MapPin, UserSquare2, ArrowLeft, ShieldCheck, Globe, Zap, Clock, Users, CalendarDays, Warehouse, Layers, Settings2, FileText, FileMinus, ListChecks, Network, Mail, Laptop, ParkingCircle } from "lucide-react";
+import { Truck, MapPin, UserSquare2, ArrowLeft, ShieldCheck, Globe, Zap, Users, CalendarDays, Layers, Settings2, ListChecks, Mail, Laptop, ParkingCircle } from "lucide-react";
 
 type LoginMode = "vettore" | "admin" | "gate";
 
@@ -37,7 +37,6 @@ function LoginContent() {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const featuresRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -105,8 +104,8 @@ function LoginContent() {
           router.replace('/');
         }
       }
-    } catch (err: any) {
-      setError(err.message || 'Errore di connessione');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Errore di connessione');
     } finally {
       setLoading(false);
     }
@@ -131,7 +130,7 @@ function LoginContent() {
           return;
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore error and proceed to login form
     }
     router.push(`/login?mode=${m}`);
@@ -163,7 +162,7 @@ function LoginContent() {
              mode === 'admin' ? "Accesso Admin" :
              "Accesso Portineria"}
           </h2>
-          <p className="text-slate-400 text-sm font-medium">BENVENUTO NELL'ECOSISTEMA L'AZIENDA</p>
+          <p className="text-slate-400 text-sm font-medium">BENVENUTO NELL&apos;ECOSISTEMA L&apos;AZIENDA</p>
         </div>
       </div>
 
@@ -323,7 +322,7 @@ function LoginContent() {
           LogiBook<span className="text-brand-action">.</span>
         </h1>
         <p className="text-slate-300 text-lg sm:text-xl font-medium max-w-3xl mx-auto leading-relaxed drop-shadow-md">
-          La piattaforma web può essere resa accessibile da esterno a clienti, fornitori e vettori per la prenotazione degli appuntamenti di carico e scarico merce secondo le disponibilità e gli slot resi visibili dalla logistica, il tutto attraverso un'interfaccia utente semplice ed intuitiva.
+          La piattaforma web può essere resa accessibile da esterno a clienti, fornitori e vettori per la prenotazione degli appuntamenti di carico e scarico merce secondo le disponibilità e gli slot resi visibili dalla logistica, il tutto attraverso un&apos;interfaccia utente semplice ed intuitiva.
         </p>
       </div>
 

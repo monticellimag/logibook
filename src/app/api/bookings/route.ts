@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const date = searchParams.get('date');
   const depotId = searchParams.get('depotId');
   
-  let conditions = [];
+  const conditions = [];
 
   if (date) {
     conditions.push(eq(bookings.date, date));

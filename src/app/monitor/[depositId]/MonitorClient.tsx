@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { Truck, Maximize } from "lucide-react";
 import { format } from "date-fns";
@@ -40,8 +40,7 @@ export default function MonitorClient({ depositId }: { depositId: string }) {
   const [now, setNow] = useState(new Date());
   const [hasStarted, setHasStarted] = useState(false);
 
-  // Polling data
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       const res = await fetch(`/api/monitor/${depositId}`);
       if (res.ok) {
@@ -52,7 +51,7 @@ export default function MonitorClient({ depositId }: { depositId: string }) {
     } catch (err) {
       console.error("Monitor fetch error:", err);
     }
-  };
+  }, [depositId]);
 
   useEffect(() => {
     if (hasStarted) {
@@ -64,7 +63,7 @@ export default function MonitorClient({ depositId }: { depositId: string }) {
         clearInterval(timeInterval);
       };
     }
-  }, [hasStarted, depositId]);
+  }, [hasStarted, fetchData]);
 
   // Handle Fullscreen
   const tryFullscreen = async () => {

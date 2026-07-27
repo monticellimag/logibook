@@ -128,7 +128,7 @@ export async function initDb() {
  * Logga un'azione nel database in modo asincrono e non bloccante.
  * Anche se il log fallisce, l'operazione principale prosegue.
  */
-export function logAudit(userId: string | null, action: string, details: any = {}) {
+export function logAudit(userId: string | null, action: string, details: unknown = {}) {
   const sql = `
     INSERT INTO audit_logs ("userId", "action", "details", "createdAt")
     VALUES ($1, $2, $3, $4)

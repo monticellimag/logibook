@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { format, addDays, subDays, setHours, setMinutes, isAfter, startOfDay } from "date-fns";
+import { useState, useEffect, useMemo, useCallback } from "react";
+import { format, addDays, subDays, isAfter } from "date-fns";
 import { it } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Truck, CheckCircle2, Clock, MapPin, X, LogOut, Upload, User, Phone, Building2, ClipboardList, Calendar, AlertCircle, Plus, LayoutDashboard, UserCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Truck, CheckCircle2, Clock, X, LogOut, ClipboardList, AlertCircle, Plus, LayoutDashboard, UserCircle2 } from "lucide-react";
 import { DEPOTS, OPERATION_TYPES } from "@/lib/constants";
 import UserProfile from "./UserProfile";
 
@@ -27,7 +27,7 @@ type Booking = {
 const HOURS = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00"];
 const EXTRA_HOURS = ["17:00", "18:00", "19:00", "20:00", "21:00", "22:00"];
 
-export default function BookingDashboard({ user }: { user: any }) {
+export default function BookingDashboard({ user }: { user: Record<string, unknown> & { name?: string } }) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDepotId, setSelectedDepotId] = useState(DEPOTS[0].id);
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -99,9 +99,9 @@ export default function BookingDashboard({ user }: { user: any }) {
        localStorage.setItem('logibook_view_mode', viewMode);
        localStorage.setItem('logibook_last_depot', selectedDepotId);
     }
-  }, [formattedDate, selectedDepotId, viewMode]);
+  }, [formattedDate, selectedDepotId, viewMode, fetchBookings, fetchHeatmap]);
 
-  const fetchHeatmap = async () => {
+  const fetchHeatmap = useCallback(async () => {
     const month = format(currentDate, "yyyy-MM");
     try {
       const res = await fetch(`/api/bookings/heatmap?month=${month}&depotId=${selectedDepotId}`);
@@ -112,9 +112,9 @@ export default function BookingDashboard({ user }: { user: any }) {
     } catch (err) {
       console.error("Heatmap fetch error:", err);
     }
-  };
+  }, [currentDate, selectedDepotId]);
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     if (!selectedDepotId) return;
     setLoading(true);
     try {
@@ -128,7 +128,7 @@ export default function BookingDashboard({ user }: { user: any }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [formattedDate, selectedDepotId]);
 
   const handlePrevDay = () => setCurrentDate(subDays(currentDate, 1));
   const handleNextDay = () => setCurrentDate(addDays(currentDate, 1));
@@ -232,8 +232,8 @@ export default function BookingDashboard({ user }: { user: any }) {
 
       await fetchBookings();
       handleCloseModal();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setIsBooking(false);
       setIsEmergencyMode(false); // Reset emergency mode after booking
@@ -258,7 +258,7 @@ export default function BookingDashboard({ user }: { user: any }) {
              </div>
              <div>
                 <h1 className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-indigo-700 to-blue-500 tracking-tighter">LogiBook<span className="text-indigo-600">.</span></h1>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">L'Azienda Ecosystem</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">L&apos;Azienda Ecosystem</p>
              </div>
           </div>
           <div className="flex items-center gap-4">
@@ -314,7 +314,7 @@ export default function BookingDashboard({ user }: { user: any }) {
             <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">Seleziona il deposito e uno slot libero per la tua prenotazione.</p>
             
             <div className="mt-6 max-w-xs">
-              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Deposito L'Azienda</label>
+              <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-2">Deposito L&apos;Azienda</label>
               <select 
                 value={selectedDepotId} 
                 onChange={(e) => setSelectedDepotId(e.target.value)}
@@ -821,6 +821,7 @@ export default function BookingDashboard({ user }: { user: any }) {
              
              <div className="p-8 text-center">
                 <div className="bg-white p-4 rounded-3xl shadow-inner border border-slate-100 flex items-center justify-center mb-6">
+                   {/* eslint-disable-next-line @next/next/no-img-element */}
                    <img 
                       src={`https://api.qrserver.com/v1/create-qr-code/?data=${selectedPass.id}&size=200x200&bgcolor=ffffff`} 
                       alt="QR Code Pass" 

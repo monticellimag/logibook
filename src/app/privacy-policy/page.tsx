@@ -14,12 +14,12 @@ export default function PrivacyPolicy() {
         
         <div className="prose prose-slate max-w-none text-slate-600 space-y-6">
           <p>
-            Benvenuto sulla piattaforma LogiBook gestita da L'Azienda Europe S.r.l. La tutela della tua privacy è di fondamentale importanza per noi.
+            Benvenuto sulla piattaforma LogiBook gestita da L&apos;Azienda Europe S.r.l. La tutela della tua privacy è di fondamentale importanza per noi.
           </p>
           
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">1. Titolare del Trattamento</h2>
           <p>
-            Il Titolare del trattamento dei dati raccolti tramite questa piattaforma è L'Azienda Europe S.r.l., con sede legale e operativa in Italia.
+            Il Titolare del trattamento dei dati raccolti tramite questa piattaforma è L&apos;Azienda Europe S.r.l., con sede legale e operativa in Italia.
           </p>
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">2. Tipologia dei Dati Raccolti</h2>
@@ -27,8 +27,8 @@ export default function PrivacyPolicy() {
             Raccogliamo le seguenti categorie di dati:
           </p>
           <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Dati di navigazione:</strong> Indirizzi IP, nomi a dominio dei computer utilizzati dagli utenti che si connettono al sito, URI/URL delle risorse richieste, l'orario della richiesta.</li>
-            <li><strong>Dati forniti volontariamente dall'utente:</strong> Nome, cognome, indirizzo e-mail aziendale, numero di telefono, dettagli sull'azienda di appartenenza per la creazione dell'account e la prenotazione degli slot di carico/scarico.</li>
+            <li><strong>Dati di navigazione:</strong> Indirizzi IP, nomi a dominio dei computer utilizzati dagli utenti che si connettono al sito, URI/URL delle risorse richieste, l&apos;orario della richiesta.</li>
+            <li><strong>Dati forniti volontariamente dall&apos;utente:</strong> Nome, cognome, indirizzo e-mail aziendale, numero di telefono, dettagli sull&apos;azienda di appartenenza per la creazione dell&apos;account e la prenotazione degli slot di carico/scarico.</li>
           </ul>
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">3. Finalità del Trattamento</h2>
@@ -36,21 +36,21 @@ export default function PrivacyPolicy() {
             I dati raccolti vengono elaborati per le seguenti finalità:
           </p>
           <ul className="list-disc pl-5 space-y-2">
-            <li>Consentire l'accesso all'area riservata della piattaforma LogiBook.</li>
+            <li>Consentire l&apos;accesso all&apos;area riservata della piattaforma LogiBook.</li>
             <li>Gestire in modo efficiente le prenotazioni degli appuntamenti di carico e scarico.</li>
             <li>Ottemperare agli obblighi di legge e alle normative applicabili.</li>
             <li>Migliorare la qualità dei nostri servizi attraverso analisi aggregate anonime.</li>
           </ul>
 
-          <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">4. Diritti dell'Utente (GDPR)</h2>
+          <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">4. Diritti dell&apos;Utente (GDPR)</h2>
           <p>
-            In conformità al Regolamento UE 2016/679 (GDPR), in qualsiasi momento l'utente ha il diritto di:
+            In conformità al Regolamento UE 2016/679 (GDPR), in qualsiasi momento l&apos;utente ha il diritto di:
             accedere ai propri dati personali, chiederne la rettifica o la cancellazione, la limitazione del trattamento o opporsi allo stesso, oltre al diritto alla portabilità dei dati.
           </p>
 
           <p className="mt-12 text-sm text-slate-500">
             Ultimo aggiornamento: Aprile 2026<br/>
-            L'Azienda Europe S.r.l.
+            L&apos;Azienda Europe S.r.l.
           </p>
         </div>
       </div>

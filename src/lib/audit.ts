@@ -7,8 +7,8 @@ export interface AuditLogParams {
   action: 'CREATE' | 'UPDATE' | 'DELETE' | 'LOGIN' | 'LOGOUT' | 'ERROR';
   entity: 'booking' | 'user' | 'slot' | 'deposit' | 'auth' | 'bay';
   entityId?: string | null;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
   ipAddress?: string | null;
   userAgent?: string | null;
   details?: string | null;

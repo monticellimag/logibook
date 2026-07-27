@@ -14,7 +14,7 @@ export default function CookiesPolicy() {
         
         <div className="prose prose-slate max-w-none text-slate-600 space-y-6">
           <p>
-            Questo sito web ("LogiBook") utilizza i cookie per offrirti un'esperienza di navigazione personalizzata e per comprendere come gli utenti interagiscono con i nostri servizi.
+            Questo sito web (&quot;LogiBook&quot;) utilizza i cookie per offrirti un&apos;esperienza di navigazione personalizzata e per comprendere come gli utenti interagiscono con i nostri servizi.
           </p>
           
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">Cosa sono i cookie?</h2>
@@ -24,19 +24,19 @@ export default function CookiesPolicy() {
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">Tipologie di cookie utilizzati</h2>
           <ul className="list-disc pl-5 space-y-2">
-            <li><strong>Cookie Tecnici (Essenziali):</strong> Sono strettamente necessari per il funzionamento del sito web e per l'utilizzo delle sue funzionalità, come l'accesso alle aree sicure della piattaforma LogiBook.</li>
+            <li><strong>Cookie Tecnici (Essenziali):</strong> Sono strettamente necessari per il funzionamento del sito web e per l&apos;utilizzo delle sue funzionalità, come l&apos;accesso alle aree sicure della piattaforma LogiBook.</li>
             <li><strong>Cookie di Analisi:</strong> Ci aiutano a capire come i visitatori interagiscono con il sito raccogliendo e trasmettendo informazioni in forma anonima.</li>
-            <li><strong>Cookie di Profilazione:</strong> Sono utilizzati per tracciare i visitatori attraverso i siti web con l'intento di mostrare annunci pertinenti e coinvolgenti. (LogiBook non utilizza cookie di profilazione di prima parte).</li>
+            <li><strong>Cookie di Profilazione:</strong> Sono utilizzati per tracciare i visitatori attraverso i siti web con l&apos;intento di mostrare annunci pertinenti e coinvolgenti. (LogiBook non utilizza cookie di profilazione di prima parte).</li>
           </ul>
 
           <h2 className="text-2xl font-bold text-slate-800 mt-8 mb-4">Gestione dei cookie</h2>
           <p>
-            Puoi controllare e/o cancellare i cookie come preferisci. Puoi cancellare tutti i cookie già presenti sul tuo computer e impostare quasi tutti i browser in modo da bloccarne l'installazione. Tuttavia, se scegli di farlo, potresti dover regolare manualmente alcune preferenze ogni volta che visiti il sito e alcuni servizi o funzionalità potrebbero non funzionare.
+            Puoi controllare e/o cancellare i cookie come preferisci. Puoi cancellare tutti i cookie già presenti sul tuo computer e impostare quasi tutti i browser in modo da bloccarne l&apos;installazione. Tuttavia, se scegli di farlo, potresti dover regolare manualmente alcune preferenze ogni volta che visiti il sito e alcuni servizi o funzionalità potrebbero non funzionare.
           </p>
 
           <p className="mt-12 text-sm text-slate-500">
             Ultimo aggiornamento: Aprile 2026<br/>
-            L'Azienda Europe S.r.l.
+            L&apos;Azienda Europe S.r.l.
           </p>
         </div>
       </div>

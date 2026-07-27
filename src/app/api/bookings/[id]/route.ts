@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getSession } from '@/lib/auth';
 import { db, bookings, bays } from '@/db';
-import { eq } from 'drizzle-orm';
+import { eq, and, inArray, desc, asc } from 'drizzle-orm';
 import { logAudit } from '@/lib/audit';
 import { headers } from 'next/headers';
 
@@ -78,7 +78,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Non hai i permessi per modificare questa prenotazione.' }, { status: 403 });
     }
 
-    const filteredUpdates: any = {};
+    const filteredUpdates: Record<string, unknown> = {};
     if (updates.status !== undefined) filteredUpdates.status = updates.status;
     if (updates.difficulty !== undefined) filteredUpdates.difficulty = updates.difficulty;
     if (updates.isEmergency !== undefined) {
@@ -100,8 +100,6 @@ export async function PATCH(
         filteredUpdates.bayId = null;
         filteredUpdates.bay = null;
       } else {
-        const { eq, and, inArray } = require('drizzle-orm');
-        
         const bayResult = await db.select()
           .from(bays)
           .where(and(eq(bays.id, updates.bayId), eq(bays.depositId, booking.depotId)))
@@ -143,7 +141,6 @@ export async function PATCH(
     const targetBayId = filteredUpdates.bayId || booking.bayId;
 
     if (isCompleting && targetBayId) {
-      const { and, eq, desc, asc } = require('drizzle-orm');
       const nextInQueue = await db
         .select()
         .from(bookings)
